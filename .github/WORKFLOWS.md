@@ -13,14 +13,17 @@ This repository uses GitHub Actions for Continuous Integration and Continuous De
 
 **Jobs:**
 - **Build and Test**: Builds the project and runs all tests on Ubuntu, Windows, and macOS
-- **Code Quality Analysis**: Runs tests with code coverage and uploads to Codecov
-- **Security Scan**: Performs CodeQL security analysis
+- **Security Scan**: Performs CodeQL security analysis for vulnerability detection
 - **Package Validation**: Creates a NuGet package to validate packaging
 
+**Purpose:**
+This workflow focuses on core CI tasks - ensuring the code builds, tests pass on all platforms, security vulnerabilities are detected, and the package can be created successfully.
+
 **Artifacts:**
-- Test results (TRX files)
-- Code coverage reports
+- Test results (TRX files) from all platforms
 - NuGet package (validation only)
+
+**Note:** Code quality checks (formatting, coverage, static analysis) are handled by the separate Code Quality workflow to keep CI fast and focused.
 
 ### 2. Publish Workflow (`publish.yml`)
 
@@ -55,9 +58,18 @@ This repository uses GitHub Actions for Continuous Integration and Continuous De
 - Manual dispatch
 
 **Jobs:**
-- **Format Check**: Validates code formatting
-- **Static Code Analysis**: Runs .NET analyzers
+- **Format Check**: Validates code formatting with `dotnet format`
+- **Static Code Analysis**: Runs .NET analyzers with warnings as errors
 - **Documentation Check**: Validates XML documentation and README
+- **Test Coverage**: Generates detailed coverage reports with ReportGenerator and comments on PRs
+
+**Purpose:**
+This workflow provides comprehensive code quality checks including formatting, static analysis, documentation validation, and detailed test coverage reporting. It runs in parallel with CI to provide feedback without blocking the main CI pipeline.
+
+**Artifacts:**
+- Detailed coverage reports (HTML and Markdown)
+
+**Note:** This workflow complements CI by providing deeper quality insights. While CI focuses on build/test/security, this workflow ensures code quality standards are met.
 - **Test Coverage**: Generates detailed coverage reports
 
 **Artifacts:**
