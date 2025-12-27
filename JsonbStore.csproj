@@ -6,6 +6,23 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>JsonbStore</PackageId>
+    <Title>JSONB-Store</Title>
+    <Authors>idotta</Authors>
+    <Description>A high-performance, single-file application data format using C#, SQLite, and Dapper. Stores JSON data in SQLite's JSONB format for optimal performance.</Description>
+    <PackageTags>sqlite;jsonb;json;database;repository;async;dapper;orm;document-store</PackageTags>
+    <PackageProjectUrl>https://github.com/idotta/jsonb-store</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/idotta/jsonb-store</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +32,10 @@
 
   <ItemGroup>
     <Compile Remove="Tests/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

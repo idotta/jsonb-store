@@ -1,4 +1,10 @@
 # JSONB-STORE
+
+[![CI](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml)
+[![NuGet](https://img.shields.io/nuget/v/JsonbStore.svg)](https://www.nuget.org/packages/JsonbStore/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A high-performance, single-file application data format using C#, SQLite (Microsoft.Data.Sqlite), and Dapper.
 
 # Core Architecture
@@ -141,3 +147,31 @@ The library uses SQLite's JSONB functions introduced in version 3.45+:
   - Faster queries on JSON data
   - Reduced parsing overhead
   - Compatible with SQLite's JSON functions
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **Continuous Integration**: Automated builds and tests on every push and PR
+- **Multi-platform Testing**: Tests run on Ubuntu, Windows, and macOS
+- **Code Quality**: Automated code analysis, formatting checks, and security scans
+- **NuGet Publishing**: Automated package publishing on GitHub releases
+- **Dependency Updates**: Dependabot keeps dependencies up to date
+
+See [.github/WORKFLOWS.md](.github/WORKFLOWS.md) for detailed CI/CD documentation.
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Ensure all tests pass: `dotnet test`
+5. Submit a pull request
+
+CI will automatically validate your changes.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

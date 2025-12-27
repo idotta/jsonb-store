@@ -1,0 +1,26 @@
+# Configuration for actions/labeler
+# Label PRs based on changed files
+
+# Core library changes
+'area/core':
+  - 'Repository.cs'
+  - 'JsonTypeHandler.cs'
+  - 'JsonbStore.csproj'
+
+# Tests
+'area/tests':
+  - 'tests/**/*'
+
+# Documentation
+'area/docs':
+  - 'README.md'
+  - '*.md'
+
+# CI/CD
+'area/ci':
+  - '.github/**/*'
+
+# Dependencies
+'dependencies':
+  - '**/packages.lock.json'
+  - '**/*.csproj'
