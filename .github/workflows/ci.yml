@@ -43,7 +43,7 @@ jobs:
       run: dotnet test tests/JsonbStore.IntegrationTests/JsonbStore.IntegrationTests.csproj --configuration Release --verbosity normal --logger "trx;LogFileName=integration-test-results.trx"
 
     - name: Upload Test Results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always()
       with:
         name: test-results-${{ matrix.os }}
@@ -101,7 +101,7 @@ jobs:
       run: dotnet pack --configuration Release --output ./artifacts --no-restore
 
     - name: Upload NuGet package artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: nuget-package
         path: ./artifacts/*.nupkg
