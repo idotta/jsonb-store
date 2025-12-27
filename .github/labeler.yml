@@ -1,0 +1,34 @@
+# Configuration for actions/labeler
+# Label PRs based on changed files
+
+# Core library changes
+area/core:
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'Repository.cs'
+      - 'JsonTypeHandler.cs'
+      - 'JsonbStore.csproj'
+
+# Tests
+area/tests:
+  - changed-files:
+    - any-glob-to-any-file: 'tests/**/*'
+
+# Documentation
+area/docs:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'README.md'
+      - '*.md'
+
+# CI/CD
+area/ci:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**/*'
+
+# Dependencies
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/packages.lock.json'
+      - '**/*.csproj'

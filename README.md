@@ -1,4 +1,10 @@
 # JSONB-STORE
+
+[![CI](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml)
+[![NuGet](https://img.shields.io/nuget/v/JsonbStore.svg)](https://www.nuget.org/packages/JsonbStore/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A high-performance, single-file application data format using C#, SQLite (Microsoft.Data.Sqlite), and Dapper.
 
 # Core Architecture
@@ -7,18 +13,165 @@ A high-performance, single-file application data format using C#, SQLite (Micros
 A single SQLite .db file acting as an "Application File Format".
 
 ## Data Storage Strategy
-Treat SQLite as a hybrid relational/document store. Small JSON metadata files are stored as binary JSON (JSONB) or TEXT blobs to avoid filesystem overhead. High-frequency binary signal data is stored as BLOB columns for maximum throughput.
+Treat SQLite as a hybrid relational/document store. JSON data is stored in **JSONB format** (binary JSON introduced in SQLite 3.45+) for optimal storage efficiency and query performance.
 
 ## Data Access Layer
 Use Dapper for next-to-zero mapping overhead.
 
 ## Custom Logic
-Implement a SqlMapper.TypeHandler<T> for Dapper to automatically handle JSON serialization/deserialization of C# objects into SQLite text/blob columns.
+Automatic JSON serialization/deserialization of C# objects into SQLite BLOB columns using JSONB format with System.Text.Json.
 
 ## Performance Requirements
 - Minimize System Calls: The design must utilize SQLite's ability to be up to 35% faster than raw file I/O for small blobs by reducing open() and close() operations.
 - Transaction Batching: All writes must be grouped into transactions to maintain high write speed.
-- Modern SQLite Features: Utilize JSONB (SQLite 3.45+) for binary-optimized JSON storage to eliminate repetitive parsing overhead.
+- Async Operations: All database operations are async for optimal performance and scalability.
+- JSONB Format: Uses SQLite's JSONB format for binary-optimized JSON storage to eliminate repetitive parsing overhead.
 
 ## Configuration
-The library should default to WAL (Write-Ahead Logging) mode and synchronous = NORMAL for optimal balance between safety and performance.
+The library defaults to WAL (Write-Ahead Logging) mode and synchronous = NORMAL for optimal balance between safety and performance.
+
+# Usage
+
+## Installation
+
+Build the project:
+```bash
+dotnet build
+```
+
+## Requirements
+
+- .NET 10
+- SQLite 3.45+ (for JSONB support)
+
+## Quick Start
+
+### JSON Object Storage
+
+```csharp
+using JsonbStore;
+
+// Create a model class
+public class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Email { get; set; }
+}
+
+// Open or create a database
+await using var repo = new Repository("mydata.db");
+
+// Create a table (table name will be "Person")
+await repo.CreateTableAsync<Person>();
+
+// Insert or update (stored as JSONB binary format)
+await repo.UpsertAsync("person1", new Person 
+{ 
+    Name = "John Doe", 
+    Age = 30, 
+    Email = "john@example.com" 
+});
+
+// Retrieve
+var person = await repo.GetAsync<Person>("person1");
+
+// Get all
+var allPeople = await repo.GetAllAsync<Person>();
+
+// Delete
+await repo.DeleteAsync<Person>("person1");
+```
+
+### Transaction Batching
+
+```csharp
+// Batch multiple operations in a transaction for performance
+await repo.ExecuteInTransactionAsync(async () =>
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        await repo.UpsertAsync($"record_{i}", new MyData { /* ... */ });
+    }
+});
+```
+
+## Running Tests
+
+The project includes comprehensive unit and integration tests using xUnit.
+
+Run unit tests:
+```bash
+cd tests/JsonbStore.UnitTests
+dotnet test
+```
+
+Run integration tests:
+```bash
+cd tests/JsonbStore.IntegrationTests
+dotnet test
+```
+
+Run all tests:
+```bash
+dotnet test
+```
+
+## Features
+
+- ✅ **Generic Repository Pattern**: Type-safe CRUD operations with automatic table naming
+- ✅ **Async/Await**: All database operations are fully async
+- ✅ **JSONB Format**: Uses SQLite 3.45+ JSONB for binary-optimized JSON storage
+- ✅ **Transaction Support**: Batch operations for high-performance writes
+- ✅ **WAL Mode**: Automatically configured for optimal concurrency
+- ✅ **Zero SQL Injection Risk**: Table names derived from types, not user input
+- ✅ **Cross-Platform**: Works on Windows, Linux, and macOS
+- ✅ **.NET 10**: Built on the latest .NET platform
+- ✅ **Comprehensive Tests**: Unit and integration tests with xUnit
+- ✅ **Minimal Dependencies**: Uses only essential packages (no FluentAssertions or other test-only dependencies in production code)
+
+## Dependencies
+
+- .NET 10
+- Dapper 2.1.66
+- Microsoft.Data.Sqlite 10.0.0
+
+## How JSONB Storage Works
+
+The library uses SQLite's JSONB functions introduced in version 3.45+:
+
+- **Storage**: Uses `jsonb()` function to convert JSON text to binary JSONB format when inserting
+- **Retrieval**: Uses `json()` function to convert JSONB back to JSON text when querying
+- **Benefits**:
+  - More compact storage (binary format)
+  - Faster queries on JSON data
+  - Reduced parsing overhead
+  - Compatible with SQLite's JSON functions
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **Continuous Integration**: Automated builds and tests on every push and PR
+- **Multi-platform Testing**: Tests run on Ubuntu, Windows, and macOS
+- **Code Quality**: Automated code analysis, formatting checks, and security scans
+- **NuGet Publishing**: Automated package publishing on GitHub releases
+- **Dependency Updates**: Dependabot keeps dependencies up to date
+
+See [.github/WORKFLOWS.md](.github/WORKFLOWS.md) for detailed CI/CD documentation.
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Ensure all tests pass: `dotnet test`
+5. Submit a pull request
+
+CI will automatically validate your changes.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
