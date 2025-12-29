@@ -110,7 +110,7 @@ jobs:
           --logger "trx;LogFileName=integration-test-results.trx"
 
     - name: Generate coverage report
-      uses: danielpalme/ReportGenerator-GitHub-Action@5.3.11
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.5.1
       with:
         reports: './coverage/**/coverage.cobertura.xml'
         targetdir: './coverage-report'
