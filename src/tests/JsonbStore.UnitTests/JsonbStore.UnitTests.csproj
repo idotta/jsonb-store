@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../JsonbStore.csproj" />
+    <ProjectReference Include="../../JsonbStore/JsonbStore.csproj" />
   </ItemGroup>
 
 </Project>

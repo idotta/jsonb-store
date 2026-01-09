@@ -19,11 +19,11 @@ Treat SQLite as a hybrid relational/document store. JSON data is stored in **JSO
 Use Dapper for next-to-zero mapping overhead.
 
 ## Custom Logic
-Automatic JSON serialization/deserialization of C# objects into SQLite BLOB columns using JSONB format with System.Text.Json.
+Automatic JSON serialization/deserialization of C# objects into SQLite BLOB columns using JSONB format.
 
 ## Performance Requirements
 - Minimize System Calls: The design must utilize SQLite's ability to be up to 35% faster than raw file I/O for small blobs by reducing open() and close() operations.
-- Transaction Batching: All writes must be grouped into transactions to maintain high write speed.
+- Transaction Batching: Writes should be grouped into transactions to maintain high write speed.
 - Async Operations: All database operations are async for optimal performance and scalability.
 - JSONB Format: Uses SQLite's JSONB format for binary-optimized JSON storage to eliminate repetitive parsing overhead.
 
@@ -44,79 +44,6 @@ dotnet build
 - .NET 10
 - SQLite 3.45+ (for JSONB support)
 
-## Quick Start
-
-### JSON Object Storage
-
-```csharp
-using JsonbStore;
-
-// Create a model class
-public class Person
-{
-    public string Name { get; set; }
-    public int Age { get; set; }
-    public string Email { get; set; }
-}
-
-// Open or create a database
-await using var repo = new Repository("mydata.db");
-
-// Create a table (table name will be "Person")
-await repo.CreateTableAsync<Person>();
-
-// Insert or update (stored as JSONB binary format)
-await repo.UpsertAsync("person1", new Person 
-{ 
-    Name = "John Doe", 
-    Age = 30, 
-    Email = "john@example.com" 
-});
-
-// Retrieve
-var person = await repo.GetAsync<Person>("person1");
-
-// Get all
-var allPeople = await repo.GetAllAsync<Person>();
-
-// Delete
-await repo.DeleteAsync<Person>("person1");
-```
-
-### Transaction Batching
-
-```csharp
-// Batch multiple operations in a transaction for performance
-await repo.ExecuteInTransactionAsync(async () =>
-{
-    for (int i = 0; i < 1000; i++)
-    {
-        await repo.UpsertAsync($"record_{i}", new MyData { /* ... */ });
-    }
-});
-```
-
-## Running Tests
-
-The project includes comprehensive unit and integration tests using xUnit.
-
-Run unit tests:
-```bash
-cd tests/JsonbStore.UnitTests
-dotnet test
-```
-
-Run integration tests:
-```bash
-cd tests/JsonbStore.IntegrationTests
-dotnet test
-```
-
-Run all tests:
-```bash
-dotnet test
-```
-
 ## Features
 
 - ✅ **Generic Repository Pattern**: Type-safe CRUD operations with automatic table naming
@@ -128,25 +55,20 @@ dotnet test
 - ✅ **Cross-Platform**: Works on Windows, Linux, and macOS
 - ✅ **.NET 10**: Built on the latest .NET platform
 - ✅ **Comprehensive Tests**: Unit and integration tests with xUnit
-- ✅ **Minimal Dependencies**: Uses only essential packages (no FluentAssertions or other test-only dependencies in production code)
 
 ## Dependencies
 
 - .NET 10
-- Dapper 2.1.66
-- Microsoft.Data.Sqlite 10.0.0
+- Dapper
+- Microsoft.Data.Sqlite
 
-## How JSONB Storage Works
+## JSONB Storage Benefits
 
 The library uses SQLite's JSONB functions introduced in version 3.45+:
-
-- **Storage**: Uses `jsonb()` function to convert JSON text to binary JSONB format when inserting
-- **Retrieval**: Uses `json()` function to convert JSONB back to JSON text when querying
-- **Benefits**:
-  - More compact storage (binary format)
-  - Faster queries on JSON data
-  - Reduced parsing overhead
-  - Compatible with SQLite's JSON functions
+- More compact storage (binary format)
+- Faster queries on JSON data
+- Reduced parsing overhead
+- Compatible with SQLite's JSON functions
 
 ## CI/CD
 

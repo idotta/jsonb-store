@@ -1,138 +1,35 @@
-name: Publish NuGet Package
+name: Publish to NuGet
 
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g., 1.0.0)'
-        required: true
-        type: string
-
-env:
-  DOTNET_VERSION: '10.0.x'
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  validate:
-    name: Validate Release
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore src/jsonb-store.slnx
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+      - name: Build
+        run: dotnet build src/jsonb-store.slnx --no-restore --configuration Release
 
-    - name: Run all tests
-      run: dotnet test --configuration Release --verbosity normal
+      - name: Test
+        run: dotnet test src/jsonb-store.slnx --no-build --configuration Release
 
-  publish:
-    name: Publish to NuGet.org
-    runs-on: ubuntu-latest
-    needs: validate
-    environment: production
+      - name: Set Version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
+      - name: Pack
+        run: dotnet pack src/JsonbStore/JsonbStore.csproj --no-build --configuration Release --output . -p:PackageVersion=${{ env.VERSION }} --include-symbols -p:SymbolPackageFormat=snupkg
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Get version from release
-      id: get_version
-      run: |
-        if [ "${{ github.event_name }}" = "release" ]; then
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-        else
-          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-
-    - name: Pack NuGet package
-      run: |
-        dotnet pack JsonbStore.csproj \
-          --configuration Release \
-          --no-build \
-          --output ./artifacts \
-          /p:Version=${{ steps.get_version.outputs.version }} \
-          /p:PackageVersion=${{ steps.get_version.outputs.version }} \
-          /p:IncludeSymbols=true \
-          /p:SymbolPackageFormat=snupkg
-
-    - name: Push to NuGet.org
-      run: |
-        dotnet nuget push ./artifacts/*.nupkg \
-          --api-key ${{ secrets.NUGET_API_KEY }} \
-          --source https://api.nuget.org/v3/index.json \
-          --skip-duplicate
-
-    - name: Upload package artifact
-      uses: actions/upload-artifact@v6
-      with:
-        name: nuget-package-${{ steps.get_version.outputs.version }}
-        path: ./artifacts/*.nupkg
-        retention-days: 90
-
-  create-github-release:
-    name: Create GitHub Release Assets
-    runs-on: ubuntu-latest
-    needs: publish
-    if: github.event_name == 'release'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Get version from release
-      id: get_version
-      run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-    - name: Build Release
-      run: dotnet build --configuration Release
-
-    - name: Pack NuGet package
-      run: |
-        dotnet pack JsonbStore.csproj \
-          --configuration Release \
-          --no-build \
-          --output ./artifacts \
-          /p:Version=${{ steps.get_version.outputs.version }}
-
-    - name: Upload Release Assets
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          ./artifacts/*.nupkg
-          ./artifacts/*.snupkg
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push to NuGet
+        run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}

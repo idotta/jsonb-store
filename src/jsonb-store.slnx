@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/JsonbStore.IntegrationTests/JsonbStore.IntegrationTests.csproj" />
+    <Project Path="tests/JsonbStore.UnitTests/JsonbStore.UnitTests.csproj" />
+  </Folder>
+  <Project Path="JsonbStore/JsonbStore.csproj" />
+</Solution>

@@ -22,7 +22,7 @@ public class RepositoryTests
         Assert.NotNull(repo);
         Assert.NotNull(repo.Connection);
         Assert.Equal(System.Data.ConnectionState.Open, repo.Connection.State);
-        
+
         // Cleanup
         repo.Dispose();
         GC.Collect();
@@ -39,18 +39,18 @@ public class RepositoryTests
         // This tests the private method indirectly through CreateTableAsync
         // We'll verify table creation works with the correct type name
         var testDbPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.db");
-        
+
         using (var repo = new Repository(testDbPath))
         {
             // Act - create table should use type name
             await repo.CreateTableAsync<TestPerson>();
-            
+
             // Assert - verify table exists with correct name
             var checkSql = "SELECT name FROM sqlite_master WHERE type='table' AND name='TestPerson'";
             var result = repo.Connection.QueryFirstOrDefault<string>(checkSql);
             Assert.Equal("TestPerson", result);
         }
-        
+
         // Cleanup
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -72,7 +72,7 @@ public class RepositoryTests
 
         // Assert
         Assert.Equal(System.Data.ConnectionState.Closed, connection.State);
-        
+
         // Cleanup
         GC.Collect();
         GC.WaitForPendingFinalizers();
@@ -94,7 +94,7 @@ public class RepositoryTests
 
         // Assert
         Assert.Equal(System.Data.ConnectionState.Closed, connection.State);
-        
+
         // Cleanup
         GC.Collect();
         GC.WaitForPendingFinalizers();
