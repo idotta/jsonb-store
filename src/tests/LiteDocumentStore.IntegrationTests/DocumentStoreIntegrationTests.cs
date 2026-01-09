@@ -219,7 +219,7 @@ public class DocumentStoreIntegrationTests : IDisposable
         var version = await _connection.QueryFirstOrDefaultAsync<string>("SELECT sqlite_version()");
         Assert.NotNull(version);
         Assert.True(Version.TryParse(version, out var sqliteVersion));
-        Assert.True(sqliteVersion >= new Version(3, 45, 0), 
+        Assert.True(sqliteVersion >= new Version(3, 45, 0),
             $"SQLite version {sqliteVersion} should be 3.45.0 or higher for JSONB support");
     }
 
