@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Default implementation of <see cref="IDocumentStoreFactory"/>.
@@ -51,7 +51,7 @@ public sealed class DocumentStoreFactory : IDocumentStoreFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentStore Create(JsonbStoreOptions options)
+    public IDocumentStore Create(DocumentStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -66,7 +66,7 @@ public sealed class DocumentStoreFactory : IDocumentStoreFactory
     }
 
     /// <inheritdoc/>
-    public async Task<IDocumentStore> CreateAsync(JsonbStoreOptions options)
+    public async Task<IDocumentStore> CreateAsync(DocumentStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 

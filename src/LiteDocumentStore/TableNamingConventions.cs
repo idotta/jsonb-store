@@ -1,4 +1,4 @@
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Default implementation of <see cref="ITableNamingConvention"/> that uses the type name as-is.

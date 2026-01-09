@@ -41,10 +41,10 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Run Unit Tests
-      run: dotnet test tests/JsonbStore.UnitTests/JsonbStore.UnitTests.csproj --configuration Release --verbosity normal --logger "trx;LogFileName=unit-test-results.trx"
+      run: dotnet test tests/LiteDocumentStore.UnitTests/LiteDocumentStore.UnitTests.csproj --configuration Release --verbosity normal --logger "trx;LogFileName=unit-test-results.trx"
 
     - name: Run Integration Tests
-      run: dotnet test tests/JsonbStore.IntegrationTests/JsonbStore.IntegrationTests.csproj --configuration Release --verbosity normal --logger "trx;LogFileName=integration-test-results.trx"
+      run: dotnet test tests/LiteDocumentStore.IntegrationTests/LiteDocumentStore.IntegrationTests.csproj --configuration Release --verbosity normal --logger "trx;LogFileName=integration-test-results.trx"
 
     - name: Upload Test Results
       uses: actions/upload-artifact@v6

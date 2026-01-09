@@ -74,7 +74,7 @@ WHERE id = @Id
 ### WAL Mode (Write-Ahead Logging)
 
 ```sql
--- Enable WAL for better concurrency (default in JsonbStore)
+-- Enable WAL for better concurrency (default in LiteDocumentStore)
 PRAGMA journal_mode = WAL;
 
 -- Benefits:
@@ -86,7 +86,7 @@ PRAGMA journal_mode = WAL;
 ### Synchronous Mode
 
 ```sql
--- NORMAL provides good balance of safety and speed (default in JsonbStore)
+-- NORMAL provides good balance of safety and speed (default in LiteDocumentStore)
 PRAGMA synchronous = NORMAL;
 
 -- Options:

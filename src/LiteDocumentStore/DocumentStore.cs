@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Data;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// A high-performance document store for storing JSON objects in SQLite.

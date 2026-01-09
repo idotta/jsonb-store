@@ -2,7 +2,7 @@ using Dapper;
 using System.Data;
 using System.Text.Json;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// A Dapper TypeHandler that automatically serializes and deserializes JSON objects

@@ -1,4 +1,4 @@
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Internal helper class for generating SQL statements. 

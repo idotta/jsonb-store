@@ -1,27 +1,27 @@
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
-/// Builder for creating JsonbStoreOptions with a fluent API.
+/// Builder for creating DocumentStoreOptions with a fluent API.
 /// </summary>
-public class JsonbStoreOptionsBuilder
+public class DocumentStoreOptionsBuilder
 {
-    private readonly JsonbStoreOptions _options;
+    private readonly DocumentStoreOptions _options;
 
     /// <summary>
-    /// Initializes a new instance of JsonbStoreOptionsBuilder.
+    /// Initializes a new instance of DocumentStoreOptionsBuilder.
     /// </summary>
-    public JsonbStoreOptionsBuilder()
+    public DocumentStoreOptionsBuilder()
     {
-        _options = new JsonbStoreOptions();
+        _options = new DocumentStoreOptions();
     }
 
     /// <summary>
-    /// Initializes a new instance of JsonbStoreOptionsBuilder with a connection string.
+    /// Initializes a new instance of DocumentStoreOptionsBuilder with a connection string.
     /// </summary>
     /// <param name="connectionString">The database file path or connection string</param>
-    public JsonbStoreOptionsBuilder(string connectionString)
+    public DocumentStoreOptionsBuilder(string connectionString)
     {
-        _options = new JsonbStoreOptions(connectionString);
+        _options = new DocumentStoreOptions(connectionString);
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="connectionString">The database file path or connection string</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithConnectionString(string connectionString)
+    public DocumentStoreOptionsBuilder WithConnectionString(string connectionString)
     {
         _options.ConnectionString = connectionString;
         return this;
@@ -40,7 +40,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="filePath">Path to the database file</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder UseFile(string filePath)
+    public DocumentStoreOptionsBuilder UseFile(string filePath)
     {
         _options.ConnectionString = $"Data Source={filePath}";
         return this;
@@ -51,7 +51,7 @@ public class JsonbStoreOptionsBuilder
     /// Data will be lost when the connection closes.
     /// </summary>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder UseInMemory()
+    public DocumentStoreOptionsBuilder UseInMemory()
     {
         _options.ConnectionString = "Data Source=:memory:";
         _options.EnableWalMode = false; // WAL not supported for :memory:
@@ -65,7 +65,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="cacheName">Optional name for the shared cache (default: "shared")</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder UseSharedInMemory(string cacheName = "shared")
+    public DocumentStoreOptionsBuilder UseSharedInMemory(string cacheName = "shared")
     {
         _options.ConnectionString = $"Data Source=file:{cacheName}?mode=memory&cache=shared";
         _options.EnableWalMode = false; // WAL not supported for in-memory
@@ -78,7 +78,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="enabled">True to enable WAL mode, false to disable</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithWalMode(bool enabled = true)
+    public DocumentStoreOptionsBuilder WithWalMode(bool enabled = true)
     {
         _options.EnableWalMode = enabled;
         return this;
@@ -89,7 +89,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="mode">The synchronous mode (Off, Normal, or Full)</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithSynchronousMode(SynchronousMode mode)
+    public DocumentStoreOptionsBuilder WithSynchronousMode(SynchronousMode mode)
     {
         _options.SynchronousMode = mode;
         return this;
@@ -101,7 +101,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="pageSize">The page size in bytes</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithPageSize(int pageSize)
+    public DocumentStoreOptionsBuilder WithPageSize(int pageSize)
     {
         if (pageSize < 512 || pageSize > 65536 || (pageSize & (pageSize - 1)) != 0)
         {
@@ -119,7 +119,7 @@ public class JsonbStoreOptionsBuilder
     /// Negative values specify kilobytes (e.g., -2000 = 2MB).
     /// </param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithCacheSize(int cacheSize)
+    public DocumentStoreOptionsBuilder WithCacheSize(int cacheSize)
     {
         _options.CacheSize = cacheSize;
         return this;
@@ -130,7 +130,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="cacheSizeMb">Cache size in megabytes</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithCacheSizeMb(int cacheSizeMb)
+    public DocumentStoreOptionsBuilder WithCacheSizeMb(int cacheSizeMb)
     {
         _options.CacheSize = -cacheSizeMb * 1024;
         return this;
@@ -141,7 +141,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="timeoutMs">Timeout in milliseconds</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithBusyTimeout(int timeoutMs)
+    public DocumentStoreOptionsBuilder WithBusyTimeout(int timeoutMs)
     {
         _options.BusyTimeoutMs = timeoutMs;
         return this;
@@ -152,7 +152,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="enabled">True to enable foreign keys, false to disable</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithForeignKeys(bool enabled = true)
+    public DocumentStoreOptionsBuilder WithForeignKeys(bool enabled = true)
     {
         _options.EnableForeignKeys = enabled;
         return this;
@@ -163,7 +163,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="maxPoolSize">Maximum number of connections in the pool (default: 10)</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithConnectionPooling(int maxPoolSize = 10)
+    public DocumentStoreOptionsBuilder WithConnectionPooling(int maxPoolSize = 10)
     {
         _options.UseConnectionPooling = true;
         _options.MaxPoolSize = maxPoolSize;
@@ -175,7 +175,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="convention">The table naming convention to use</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithTableNamingConvention(ITableNamingConvention convention)
+    public DocumentStoreOptionsBuilder WithTableNamingConvention(ITableNamingConvention convention)
     {
         _options.TableNamingConvention = convention;
         return this;
@@ -186,7 +186,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="serializer">The JSON serializer to use</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithJsonSerializer(IJsonSerializer serializer)
+    public DocumentStoreOptionsBuilder WithJsonSerializer(IJsonSerializer serializer)
     {
         _options.JsonSerializer = serializer;
         return this;
@@ -197,7 +197,7 @@ public class JsonbStoreOptionsBuilder
     /// </summary>
     /// <param name="pragma">The PRAGMA statement (e.g., "PRAGMA temp_store = MEMORY")</param>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder AddPragma(string pragma)
+    public DocumentStoreOptionsBuilder AddPragma(string pragma)
     {
         if (!string.IsNullOrWhiteSpace(pragma))
         {
@@ -211,7 +211,7 @@ public class JsonbStoreOptionsBuilder
     /// Sets: WAL mode, synchronous=NORMAL, larger cache, optimized page size.
     /// </summary>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder OptimizeForPerformance()
+    public DocumentStoreOptionsBuilder OptimizeForPerformance()
     {
         _options.EnableWalMode = true;
         _options.SynchronousMode = SynchronousMode.Normal;
@@ -225,7 +225,7 @@ public class JsonbStoreOptionsBuilder
     /// Sets: WAL mode, synchronous=FULL, foreign keys enabled.
     /// </summary>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder OptimizeForSafety()
+    public DocumentStoreOptionsBuilder OptimizeForSafety()
     {
         _options.EnableWalMode = true;
         _options.SynchronousMode = SynchronousMode.Full;
@@ -238,17 +238,17 @@ public class JsonbStoreOptionsBuilder
     /// Sets: In-memory database, no WAL, synchronous=OFF for maximum speed.
     /// </summary>
     /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder OptimizeForTesting()
+    public DocumentStoreOptionsBuilder OptimizeForTesting()
     {
         UseInMemory();
         return this;
     }
 
     /// <summary>
-    /// Builds the JsonbStoreOptions instance.
+    /// Builds the DocumentStoreOptions instance.
     /// </summary>
-    /// <returns>The configured JsonbStoreOptions</returns>
-    public JsonbStoreOptions Build()
+    /// <returns>The configured DocumentStoreOptions</returns>
+    public DocumentStoreOptions Build()
     {
         if (string.IsNullOrEmpty(_options.ConnectionString))
         {

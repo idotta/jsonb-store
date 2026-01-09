@@ -1,6 +1,6 @@
 using Microsoft.Data.Sqlite;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Defines the contract for SQLite connection lifecycle management.
@@ -14,14 +14,14 @@ public interface IConnectionFactory
     /// </summary>
     /// <param name="options">Configuration options for the connection</param>
     /// <returns>An open SQLite connection</returns>
-    SqliteConnection CreateConnection(JsonbStoreOptions options);
+    SqliteConnection CreateConnection(DocumentStoreOptions options);
 
     /// <summary>
     /// Creates and opens a new SQLite connection.
     /// </summary>
     /// <param name="options">Configuration options for the connection</param>
     /// <returns>An open SQLite connection</returns>
-    Task<SqliteConnection> CreateConnectionAsync(JsonbStoreOptions options);
+    Task<SqliteConnection> CreateConnectionAsync(DocumentStoreOptions options);
 
     /// <summary>
     /// Configures a SQLite connection with optimal performance settings
@@ -29,7 +29,7 @@ public interface IConnectionFactory
     /// </summary>
     /// <param name="connection">The connection to configure</param>
     /// <param name="options">Configuration options to apply</param>
-    void ConfigureConnection(SqliteConnection connection, JsonbStoreOptions options);
+    void ConfigureConnection(SqliteConnection connection, DocumentStoreOptions options);
 
     /// <summary>
     /// Configures a SQLite connection with optimal performance settings
@@ -38,5 +38,5 @@ public interface IConnectionFactory
     /// <param name="connection">The connection to configure</param>
     /// <param name="options">Configuration options to apply</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    Task ConfigureConnectionAsync(SqliteConnection connection, JsonbStoreOptions options);
+    Task ConfigureConnectionAsync(SqliteConnection connection, DocumentStoreOptions options);
 }

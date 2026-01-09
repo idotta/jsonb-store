@@ -117,9 +117,6 @@ public async Task<T?> GetAsync<T>(string id)
 ## Error Handling
 
 ```csharp
-// Use custom exceptions for domain errors
-throw new JsonbStoreException("Table not found", innerException);
-
 // Validate early, fail fast
 if (string.IsNullOrEmpty(id))
     throw new ArgumentException("ID cannot be null or empty", nameof(id));

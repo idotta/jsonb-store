@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Default implementation of <see cref="IJsonSerializer"/> using System.Text.Json.

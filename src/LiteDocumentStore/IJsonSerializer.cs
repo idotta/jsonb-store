@@ -1,4 +1,4 @@
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Defines the contract for pluggable JSON serialization.

@@ -2,58 +2,58 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
-/// Extension methods for configuring JsonbStore services in an <see cref="IServiceCollection"/>.
+/// Extension methods for configuring LiteDocumentStore services in an <see cref="IServiceCollection"/>.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds JsonbStore services to the specified <see cref="IServiceCollection"/> with a singleton document store.
+    /// Adds LiteDocumentStore services to the specified <see cref="IServiceCollection"/> with a singleton document store.
     /// Uses a single long-lived connection for optimal performance.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add services to</param>
-    /// <param name="configureOptions">A delegate to configure the <see cref="JsonbStoreOptions"/></param>
+    /// <param name="configureOptions">A delegate to configure the <see cref="DocumentStoreOptions"/></param>
     /// <returns>The <see cref="IServiceCollection"/> for method chaining</returns>
-    public static IServiceCollection AddJsonbStore(
+    public static IServiceCollection AddLiteDocumentStore(
         this IServiceCollection services,
-        Action<JsonbStoreOptions> configureOptions)
+        Action<DocumentStoreOptions> configureOptions)
     {
-        return services.AddJsonbStore(configureOptions, ServiceLifetime.Singleton);
+        return services.AddLiteDocumentStore(configureOptions, ServiceLifetime.Singleton);
     }
 
     /// <summary>
-    /// Adds JsonbStore services to the specified <see cref="IServiceCollection"/> with configurable lifetime.
+    /// Adds LiteDocumentStore services to the specified <see cref="IServiceCollection"/> with configurable lifetime.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add services to</param>
-    /// <param name="configureOptions">A delegate to configure the <see cref="JsonbStoreOptions"/></param>
+    /// <param name="configureOptions">A delegate to configure the <see cref="DocumentStoreOptions"/></param>
     /// <param name="lifetime">The service lifetime (Singleton recommended for single long-lived connection, Scoped for connection per request)</param>
     /// <returns>The <see cref="IServiceCollection"/> for method chaining</returns>
-    public static IServiceCollection AddJsonbStore(
+    public static IServiceCollection AddLiteDocumentStore(
         this IServiceCollection services,
-        Action<JsonbStoreOptions> configureOptions,
+        Action<DocumentStoreOptions> configureOptions,
         ServiceLifetime lifetime)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureOptions);
 
-        var options = new JsonbStoreOptions();
+        var options = new DocumentStoreOptions();
         configureOptions(options);
 
-        return services.AddJsonbStore(options, lifetime);
+        return services.AddLiteDocumentStore(options, lifetime);
     }
 
     /// <summary>
-    /// Adds JsonbStore services to the specified <see cref="IServiceCollection"/> with pre-configured options.
+    /// Adds LiteDocumentStore services to the specified <see cref="IServiceCollection"/> with pre-configured options.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add services to</param>
-    /// <param name="options">The pre-configured <see cref="JsonbStoreOptions"/></param>
+    /// <param name="options">The pre-configured <see cref="DocumentStoreOptions"/></param>
     /// <param name="lifetime">The service lifetime (default: Singleton)</param>
     /// <returns>The <see cref="IServiceCollection"/> for method chaining</returns>
-    public static IServiceCollection AddJsonbStore(
+    public static IServiceCollection AddLiteDocumentStore(
         this IServiceCollection services,
-        JsonbStoreOptions options,
+        DocumentStoreOptions options,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -81,44 +81,44 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    // Note: For multiple database support, use AddKeyedJsonbStore() instead (requires .NET 8+).
+    // Note: For multiple database support, use AddKeyedLiteDocumentStore() instead (requires .NET 8+).
 
     /// <summary>
-    /// Adds a keyed JsonbStore document store for managing multiple databases (requires .NET 8+).
+    /// Adds a keyed LiteDocumentStore document store for managing multiple databases (requires .NET 8+).
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add services to</param>
     /// <param name="serviceKey">The key to identify this store instance</param>
-    /// <param name="configureOptions">A delegate to configure the <see cref="JsonbStoreOptions"/></param>
+    /// <param name="configureOptions">A delegate to configure the <see cref="DocumentStoreOptions"/></param>
     /// <param name="lifetime">The service lifetime (default: Singleton)</param>
     /// <returns>The <see cref="IServiceCollection"/> for method chaining</returns>
-    public static IServiceCollection AddKeyedJsonbStore(
+    public static IServiceCollection AddKeyedLiteDocumentStore(
         this IServiceCollection services,
         object serviceKey,
-        Action<JsonbStoreOptions> configureOptions,
+        Action<DocumentStoreOptions> configureOptions,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(serviceKey);
         ArgumentNullException.ThrowIfNull(configureOptions);
 
-        var options = new JsonbStoreOptions();
+        var options = new DocumentStoreOptions();
         configureOptions(options);
 
-        return services.AddKeyedJsonbStore(serviceKey, options, lifetime);
+        return services.AddKeyedLiteDocumentStore(serviceKey, options, lifetime);
     }
 
     /// <summary>
-    /// Adds a keyed JsonbStore document store for managing multiple databases (requires .NET 8+).
+    /// Adds a keyed LiteDocumentStore document store for managing multiple databases (requires .NET 8+).
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add services to</param>
     /// <param name="serviceKey">The key to identify this store instance</param>
-    /// <param name="options">The pre-configured <see cref="JsonbStoreOptions"/></param>
+    /// <param name="options">The pre-configured <see cref="DocumentStoreOptions"/></param>
     /// <param name="lifetime">The service lifetime (default: Singleton)</param>
     /// <returns>The <see cref="IServiceCollection"/> for method chaining</returns>
-    public static IServiceCollection AddKeyedJsonbStore(
+    public static IServiceCollection AddKeyedLiteDocumentStore(
         this IServiceCollection services,
         object serviceKey,
-        JsonbStoreOptions options,
+        DocumentStoreOptions options,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
     {
         ArgumentNullException.ThrowIfNull(services);

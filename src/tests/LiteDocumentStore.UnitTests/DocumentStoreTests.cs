@@ -2,7 +2,7 @@ using Dapper;
 using Microsoft.Data.Sqlite;
 using Xunit;
 
-namespace JsonbStore.UnitTests;
+namespace LiteDocumentStore.UnitTests;
 
 public class DocumentStoreTests
 {
@@ -17,7 +17,7 @@ public class DocumentStoreTests
     public void Constructor_WithConnection_CreatesDocumentStore()
     {
         // Arrange & Act
-        var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
         var connectionFactory = new DefaultConnectionFactory();
         using var connection = connectionFactory.CreateConnection(options);
         var store = new DocumentStore(connection);
@@ -40,7 +40,7 @@ public class DocumentStoreTests
     {
         // This tests the interaction indirectly through CreateTableAsync
         var testDbPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.db");
-        var options = new JsonbStoreOptions { ConnectionString = $"Data Source={testDbPath}" };
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={testDbPath}" };
         var connectionFactory = new DefaultConnectionFactory();
 
         using (var connection = connectionFactory.CreateConnection(options))
@@ -67,7 +67,7 @@ public class DocumentStoreTests
     public async Task Store_WithOwnsConnection_DisposesConnection()
     {
         // Arrange
-        var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
         var connectionFactory = new DefaultConnectionFactory();
         var connection = connectionFactory.CreateConnection(options);
         var store = new DocumentStore(connection, ownsConnection: true);
@@ -88,7 +88,7 @@ public class DocumentStoreTests
     public async Task Store_WithoutOwnsConnection_DoesNotDisposeConnection()
     {
         // Arrange
-        var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
         var connectionFactory = new DefaultConnectionFactory();
         var connection = connectionFactory.CreateConnection(options);
         var store = new DocumentStore(connection, ownsConnection: false);

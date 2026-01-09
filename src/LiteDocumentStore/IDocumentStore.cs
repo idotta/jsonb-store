@@ -1,7 +1,7 @@
 using Microsoft.Data.Sqlite;
 using System.Data;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Defines the contract for a document store that provides JSON document storage

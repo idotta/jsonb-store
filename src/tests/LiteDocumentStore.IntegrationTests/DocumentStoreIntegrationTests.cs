@@ -2,7 +2,7 @@ using Dapper;
 using Microsoft.Data.Sqlite;
 using Xunit;
 
-namespace JsonbStore.IntegrationTests;
+namespace LiteDocumentStore.IntegrationTests;
 
 public class DocumentStoreIntegrationTests : IDisposable
 {
@@ -13,7 +13,7 @@ public class DocumentStoreIntegrationTests : IDisposable
     public DocumentStoreIntegrationTests()
     {
         _testDbPath = Path.Combine(Path.GetTempPath(), $"test_integration_{Guid.NewGuid()}.db");
-        var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
         var connectionFactory = new DefaultConnectionFactory();
         
         // Manual connection management

@@ -1,9 +1,9 @@
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
-/// Configuration options for JsonbStore repository behavior and SQLite performance settings.
+/// Configuration options for DocumentStore repository behavior and SQLite performance settings.
 /// </summary>
-public class JsonbStoreOptions
+public class DocumentStoreOptions
 {
     /// <summary>
     /// Gets or sets the database file path or connection string.
@@ -83,48 +83,48 @@ public class JsonbStoreOptions
     public List<string> AdditionalPragmas { get; set; } = new();
 
     /// <summary>
-    /// Creates a new instance of JsonbStoreOptions with default settings.
+    /// Creates a new instance of DocumentStoreOptions with default settings.
     /// </summary>
-    public JsonbStoreOptions()
+    public DocumentStoreOptions()
     {
     }
 
     /// <summary>
-    /// Creates a new instance of JsonbStoreOptions with the specified connection string.
+    /// Creates a new instance of DocumentStoreOptions with the specified connection string.
     /// </summary>
     /// <param name="connectionString">The database file path or connection string</param>
-    public JsonbStoreOptions(string connectionString)
+    public DocumentStoreOptions(string connectionString)
     {
         ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     /// <summary>
-    /// Creates a builder for configuring JsonbStoreOptions with a fluent API.
+    /// Creates a builder for configuring DocumentStoreOptions with a fluent API.
     /// </summary>
     /// <param name="connectionString">The database file path or connection string</param>
-    /// <returns>A new JsonbStoreOptionsBuilder instance</returns>
-    public static JsonbStoreOptionsBuilder Builder(string connectionString)
+    /// <returns>A new DocumentStoreOptionsBuilder instance</returns>
+    public static DocumentStoreOptionsBuilder Builder(string connectionString)
     {
-        return new JsonbStoreOptionsBuilder(connectionString);
+        return new DocumentStoreOptionsBuilder(connectionString);
     }
 
     /// <summary>
-    /// Creates a builder for configuring JsonbStoreOptions with a fluent API.
+    /// Creates a builder for configuring DocumentStoreOptions with a fluent API.
     /// </summary>
-    /// <returns>A new JsonbStoreOptionsBuilder instance</returns>
-    public static JsonbStoreOptionsBuilder Builder()
+    /// <returns>A new DocumentStoreOptionsBuilder instance</returns>
+    public static DocumentStoreOptionsBuilder Builder()
     {
-        return new JsonbStoreOptionsBuilder();
+        return new DocumentStoreOptionsBuilder();
     }
 
     /// <summary>
     /// Creates options for a file-based SQLite database with optimized settings.
     /// </summary>
     /// <param name="filePath">Path to the database file</param>
-    /// <returns>JsonbStoreOptions configured for file-based storage</returns>
-    public static JsonbStoreOptions ForFile(string filePath)
+    /// <returns>DocumentStoreOptions configured for file-based storage</returns>
+    public static DocumentStoreOptions ForFile(string filePath)
     {
-        return new JsonbStoreOptions
+        return new DocumentStoreOptions
         {
             ConnectionString = $"Data Source={filePath}",
             EnableWalMode = true,
@@ -136,10 +136,10 @@ public class JsonbStoreOptions
     /// Creates options for an in-memory SQLite database.
     /// Data will be lost when the connection closes.
     /// </summary>
-    /// <returns>JsonbStoreOptions configured for in-memory storage</returns>
-    public static JsonbStoreOptions ForInMemory()
+    /// <returns>DocumentStoreOptions configured for in-memory storage</returns>
+    public static DocumentStoreOptions ForInMemory()
     {
-        return new JsonbStoreOptions
+        return new DocumentStoreOptions
         {
             ConnectionString = "Data Source=:memory:",
             EnableWalMode = false, // WAL not supported for :memory:
@@ -152,10 +152,10 @@ public class JsonbStoreOptions
     /// Multiple connections can access the same in-memory database.
     /// </summary>
     /// <param name="cacheName">Optional name for the shared cache (default: "shared")</param>
-    /// <returns>JsonbStoreOptions configured for shared in-memory storage</returns>
-    public static JsonbStoreOptions ForSharedInMemory(string cacheName = "shared")
+    /// <returns>DocumentStoreOptions configured for shared in-memory storage</returns>
+    public static DocumentStoreOptions ForSharedInMemory(string cacheName = "shared")
     {
-        return new JsonbStoreOptions
+        return new DocumentStoreOptions
         {
             ConnectionString = $"Data Source=file:{cacheName}?mode=memory&cache=shared",
             EnableWalMode = false, // WAL not supported for in-memory
@@ -166,10 +166,10 @@ public class JsonbStoreOptions
     /// <summary>
     /// Creates a copy of the current options.
     /// </summary>
-    /// <returns>A new JsonbStoreOptions instance with copied values</returns>
-    public JsonbStoreOptions Clone()
+    /// <returns>A new DocumentStoreOptions instance with copied values</returns>
+    public DocumentStoreOptions Clone()
     {
-        return new JsonbStoreOptions
+        return new DocumentStoreOptions
         {
             ConnectionString = ConnectionString,
             EnableWalMode = EnableWalMode,

@@ -1,7 +1,7 @@
 using Microsoft.Data.Sqlite;
 using System.Data;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// Default stateless implementation of <see cref="IConnectionFactory"/>.
@@ -18,7 +18,7 @@ public sealed class DefaultConnectionFactory : IConnectionFactory
     }
 
     /// <inheritdoc/>
-    public SqliteConnection CreateConnection(JsonbStoreOptions options)
+    public SqliteConnection CreateConnection(DocumentStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -29,7 +29,7 @@ public sealed class DefaultConnectionFactory : IConnectionFactory
     }
 
     /// <inheritdoc/>
-    public async Task<SqliteConnection> CreateConnectionAsync(JsonbStoreOptions options)
+    public async Task<SqliteConnection> CreateConnectionAsync(DocumentStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -40,7 +40,7 @@ public sealed class DefaultConnectionFactory : IConnectionFactory
     }
 
     /// <inheritdoc/>
-    public void ConfigureConnection(SqliteConnection connection, JsonbStoreOptions options)
+    public void ConfigureConnection(SqliteConnection connection, DocumentStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(options);
@@ -83,7 +83,7 @@ public sealed class DefaultConnectionFactory : IConnectionFactory
     }
 
     /// <inheritdoc/>
-    public async Task ConfigureConnectionAsync(SqliteConnection connection, JsonbStoreOptions options)
+    public async Task ConfigureConnectionAsync(SqliteConnection connection, DocumentStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(options);

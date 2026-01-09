@@ -1,4 +1,4 @@
-# JsonbStore Implementation Checklist
+# LiteDocumentStore Implementation Checklist
 
 A comprehensive checklist for building a production-ready hybrid SQLite library that provides convenient JSON document storage while preserving full relational database capabilities.
 
@@ -13,13 +13,13 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
   - [x] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
 
 - [x] **Configuration system**
-  - [x] `JsonbStoreOptions` class with builder pattern
+  - [x] `DocumentStoreOptions` class with builder pattern
   - [x] WAL mode toggle, synchronous level, page size, cache size
   - [x] Connection string builder for common scenarios
   - [x] Support for in-memory databases (`:memory:`, shared cache)
 
 - [x] **Dependency Injection support**
-  - [x] `IServiceCollection.AddJsonbStore()` extension method
+  - [x] `IServiceCollection.AddLiteDocumentStore()` extension method
   - [x] Registers `SqliteConnection` for hybrid usage
   - [x] Scoped vs Singleton connection strategies
   - [x] Named/keyed store registration for multiple databases (keyed services for .NET 8+)
@@ -170,7 +170,7 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
 ## 8. Error Handling & Resilience
 
 - [ ] **Custom exceptions**
-  - [ ] `JsonbStoreException` base class
+  - [ ] `LiteDocumentStoreException` base class
   - [ ] `TableNotFoundException`, `SerializationException`, `ConcurrencyException`
   - [ ] Preserve inner SQLite exceptions
 
@@ -233,7 +233,7 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
   - [ ] Multi-connection concurrency tests
 
 - [ ] **Test helpers**
-  - [ ] `JsonbStoreTestFixture` for easy test setup
+  - [ ] `LiteDocumentStoreTestFixture` for easy test setup
   - [ ] Database seeding utilities
 
 ---
