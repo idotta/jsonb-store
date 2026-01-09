@@ -8,7 +8,7 @@ namespace JsonbStore;
 /// A high-performance repository for storing JSON objects in a single SQLite file.
 /// Uses Dapper for minimal mapping overhead and supports JSON document storage using JSONB format (SQLite 3.45+).
 /// </summary>
-public class Repository : IAsyncDisposable, IDisposable
+public class Repository : IRepository
 {
     private readonly SqliteConnection _connection;
     private readonly bool _ownsConnection;

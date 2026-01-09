@@ -6,22 +6,33 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
 
 ## 1. Core Architecture & Abstractions
 
-- [ ] **Define interfaces for extensibility**
-  - [ ] `IRepository<T>` - Generic repository contract
-  - [ ] `IJsonSerializer` - Pluggable JSON serialization (System.Text.Json, Newtonsoft, etc.)
-  - [ ] `IConnectionFactory` - Connection lifecycle management
-  - [ ] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
+- [x] **Define interfaces for extensibility**
+  - [x] `IRepository<T>` - Generic repository contract
+  - [x] `IJsonSerializer` - Pluggable JSON serialization (System.Text.Json, Newtonsoft, etc.)
+  - [x] `IConnectionFactory` - Connection lifecycle management
+  - [x] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
 
-- [ ] **Configuration system**
-  - [ ] `JsonbStoreOptions` class with builder pattern
-  - [ ] WAL mode toggle, synchronous level, page size, cache size
-  - [ ] Connection string builder for common scenarios
-  - [ ] Support for in-memory databases (`:memory:`, shared cache)
+- [x] **Configuration system**
+  - [x] `JsonbStoreOptions` class with builder pattern
+  - [x] WAL mode toggle, synchronous level, page size, cache size
+  - [x] Connection string builder for common scenarios
+  - [x] Support for in-memory databases (`:memory:`, shared cache)
 
-- [ ] **Dependency Injection support**
-  - [ ] `IServiceCollection.AddJsonbStore()` extension method
-  - [ ] Scoped vs Singleton connection strategies
-  - [ ] Named/keyed repository registration for multiple databases
+- [x] **Dependency Injection support**
+  - [x] `IServiceCollection.AddJsonbStore()` extension method
+  - [x] Scoped vs Singleton connection strategies
+  - [x] Named/keyed repository registration for multiple databases (keyed services for .NET 8+)
+
+- [ ] **Refactor existing `Repository.cs`**
+  - [ ] Implement `IRepository<T>` interface
+  - [ ] Replace direct `System.Text.Json` calls with `IJsonSerializer`
+  - [ ] Replace hardcoded `GetTableName<T>()` with `ITableNamingConvention`
+  - [ ] Accept `JsonbStoreOptions` in constructor (with sensible defaults)
+  - [ ] Use `IConnectionFactory` for connection management
+  - [ ] Add input validation (null/empty ID checks, etc.)
+  - [ ] Add `ILogger` integration for diagnostics
+  - [ ] Extract SQL generation to internal helper (for testability)
+  - [ ] Consider renaming to `JsonbRepository` or `DocumentRepository` for clarity
 
 ---
 
