@@ -4,46 +4,46 @@ using System.Data;
 namespace JsonbStore;
 
 /// <summary>
-/// Default implementation of <see cref="IConnectionFactory"/> using connection strings.
+/// Default stateless implementation of <see cref="IConnectionFactory"/>.
+/// A single instance can create connections for multiple databases by passing
+/// different options to each method.
 /// </summary>
-public class DefaultConnectionFactory : IConnectionFactory
+public sealed class DefaultConnectionFactory : IConnectionFactory
 {
-    private readonly JsonbStoreOptions _options;
-
     /// <summary>
     /// Initializes a new instance of DefaultConnectionFactory.
     /// </summary>
-    /// <param name="options">The JsonbStore configuration options</param>
-    public DefaultConnectionFactory(JsonbStoreOptions options)
+    public DefaultConnectionFactory()
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     /// <inheritdoc/>
-    public bool OwnsConnection => true;
-
-    /// <inheritdoc/>
-    public SqliteConnection CreateConnection()
+    public SqliteConnection CreateConnection(JsonbStoreOptions options)
     {
-        var connection = new SqliteConnection(_options.ConnectionString);
+        ArgumentNullException.ThrowIfNull(options);
+
+        var connection = new SqliteConnection(options.ConnectionString);
         connection.Open();
-        ConfigureConnection(connection);
+        ConfigureConnection(connection, options);
         return connection;
     }
 
     /// <inheritdoc/>
-    public async Task<SqliteConnection> CreateConnectionAsync()
+    public async Task<SqliteConnection> CreateConnectionAsync(JsonbStoreOptions options)
     {
-        var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync();
-        await ConfigureConnectionAsync(connection);
+        ArgumentNullException.ThrowIfNull(options);
+
+        var connection = new SqliteConnection(options.ConnectionString);
+        await connection.OpenAsync().ConfigureAwait(false);
+        await ConfigureConnectionAsync(connection, options).ConfigureAwait(false);
         return connection;
     }
 
     /// <inheritdoc/>
-    public void ConfigureConnection(SqliteConnection connection)
+    public void ConfigureConnection(SqliteConnection connection, JsonbStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(options);
 
         if (connection.State != ConnectionState.Open)
         {
@@ -51,76 +51,77 @@ public class DefaultConnectionFactory : IConnectionFactory
         }
 
         // Configure WAL mode
-        if (_options.EnableWalMode)
+        if (options.EnableWalMode)
         {
             connection.Execute("PRAGMA journal_mode = WAL;");
         }
 
         // Configure synchronous mode
-        var syncMode = GetSynchronousModeString(_options.SynchronousMode);
+        var syncMode = GetSynchronousModeString(options.SynchronousMode);
         connection.Execute($"PRAGMA synchronous = {syncMode};");
 
         // Configure page size (must be set before any tables are created)
-        connection.Execute($"PRAGMA page_size = {_options.PageSize};");
+        connection.Execute($"PRAGMA page_size = {options.PageSize};");
 
         // Configure cache size
-        connection.Execute($"PRAGMA cache_size = {_options.CacheSize};");
+        connection.Execute($"PRAGMA cache_size = {options.CacheSize};");
 
         // Configure busy timeout
-        connection.Execute($"PRAGMA busy_timeout = {_options.BusyTimeoutMs};");
+        connection.Execute($"PRAGMA busy_timeout = {options.BusyTimeoutMs};");
 
         // Configure foreign keys
-        if (_options.EnableForeignKeys)
+        if (options.EnableForeignKeys)
         {
             connection.Execute("PRAGMA foreign_keys = ON;");
         }
 
         // Execute additional pragmas
-        foreach (var pragma in _options.AdditionalPragmas)
+        foreach (var pragma in options.AdditionalPragmas)
         {
             connection.Execute(pragma);
         }
     }
 
     /// <inheritdoc/>
-    public async Task ConfigureConnectionAsync(SqliteConnection connection)
+    public async Task ConfigureConnectionAsync(SqliteConnection connection, JsonbStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(options);
 
         if (connection.State != ConnectionState.Open)
         {
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
         }
 
         // Configure WAL mode
-        if (_options.EnableWalMode)
+        if (options.EnableWalMode)
         {
-            await connection.ExecuteAsync("PRAGMA journal_mode = WAL;");
+            await connection.ExecuteAsync("PRAGMA journal_mode = WAL;").ConfigureAwait(false);
         }
 
         // Configure synchronous mode
-        var syncMode = GetSynchronousModeString(_options.SynchronousMode);
-        await connection.ExecuteAsync($"PRAGMA synchronous = {syncMode};");
+        var syncMode = GetSynchronousModeString(options.SynchronousMode);
+        await connection.ExecuteAsync($"PRAGMA synchronous = {syncMode};").ConfigureAwait(false);
 
         // Configure page size (must be set before any tables are created)
-        await connection.ExecuteAsync($"PRAGMA page_size = {_options.PageSize};");
+        await connection.ExecuteAsync($"PRAGMA page_size = {options.PageSize};").ConfigureAwait(false);
 
         // Configure cache size
-        await connection.ExecuteAsync($"PRAGMA cache_size = {_options.CacheSize};");
+        await connection.ExecuteAsync($"PRAGMA cache_size = {options.CacheSize};").ConfigureAwait(false);
 
         // Configure busy timeout
-        await connection.ExecuteAsync($"PRAGMA busy_timeout = {_options.BusyTimeoutMs};");
+        await connection.ExecuteAsync($"PRAGMA busy_timeout = {options.BusyTimeoutMs};").ConfigureAwait(false);
 
         // Configure foreign keys
-        if (_options.EnableForeignKeys)
+        if (options.EnableForeignKeys)
         {
-            await connection.ExecuteAsync("PRAGMA foreign_keys = ON;");
+            await connection.ExecuteAsync("PRAGMA foreign_keys = ON;").ConfigureAwait(false);
         }
 
         // Execute additional pragmas
-        foreach (var pragma in _options.AdditionalPragmas)
+        foreach (var pragma in options.AdditionalPragmas)
         {
-            await connection.ExecuteAsync(pragma);
+            await connection.ExecuteAsync(pragma).ConfigureAwait(false);
         }
     }
 
@@ -150,8 +151,8 @@ internal static class SqliteConnectionExtensions
 
     public static async Task ExecuteAsync(this SqliteConnection connection, string commandText)
     {
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText = commandText;
-        await command.ExecuteNonQueryAsync();
+        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
     }
 }

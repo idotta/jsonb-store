@@ -6,9 +6,9 @@ namespace JsonbStore;
 /// <summary>
 /// Defines the contract for a document store that provides JSON document storage
 /// with full relational database capabilities. Supports multiple entity types
-/// through generic methods.
+/// through generic methods. Implements disposal interfaces for proper resource cleanup.
 /// </summary>
-public interface IDocumentStore
+public interface IDocumentStore : IAsyncDisposable, IDisposable
 {
     /// <summary>
     /// Creates a table for storing JSON objects with a generic schema using JSONB format.

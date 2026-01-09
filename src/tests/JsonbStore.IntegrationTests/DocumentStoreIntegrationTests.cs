@@ -14,10 +14,10 @@ public class DocumentStoreIntegrationTests : IDisposable
     {
         _testDbPath = Path.Combine(Path.GetTempPath(), $"test_integration_{Guid.NewGuid()}.db");
         var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
-        var connectionFactory = new DefaultConnectionFactory(options);
+        var connectionFactory = new DefaultConnectionFactory();
         
         // Manual connection management
-        _connection = connectionFactory.CreateConnection();
+        _connection = connectionFactory.CreateConnection(options);
         _store = new DocumentStore(_connection);
     }
 

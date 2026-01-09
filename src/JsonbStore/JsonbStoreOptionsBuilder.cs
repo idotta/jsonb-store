@@ -171,17 +171,6 @@ public class JsonbStoreOptionsBuilder
     }
 
     /// <summary>
-    /// Enables or disables automatic table creation on first use.
-    /// </summary>
-    /// <param name="enabled">True to enable auto-creation, false to disable</param>
-    /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithAutoCreateTables(bool enabled = true)
-    {
-        _options.AutoCreateTables = enabled;
-        return this;
-    }
-
-    /// <summary>
     /// Sets the table naming convention.
     /// </summary>
     /// <param name="convention">The table naming convention to use</param>
@@ -200,17 +189,6 @@ public class JsonbStoreOptionsBuilder
     public JsonbStoreOptionsBuilder WithJsonSerializer(IJsonSerializer serializer)
     {
         _options.JsonSerializer = serializer;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the connection factory.
-    /// </summary>
-    /// <param name="factory">The connection factory to use</param>
-    /// <returns>This builder for method chaining</returns>
-    public JsonbStoreOptionsBuilder WithConnectionFactory(IConnectionFactory factory)
-    {
-        _options.ConnectionFactory = factory;
         return this;
     }
 
@@ -263,7 +241,6 @@ public class JsonbStoreOptionsBuilder
     public JsonbStoreOptionsBuilder OptimizeForTesting()
     {
         UseInMemory();
-        _options.AutoCreateTables = true;
         return this;
     }
 

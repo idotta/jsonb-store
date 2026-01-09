@@ -1,0 +1,82 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace JsonbStore;
+
+/// <summary>
+/// Default implementation of <see cref="IDocumentStoreFactory"/>.
+/// Creates <see cref="DocumentStore"/> instances with all dependencies composed.
+/// </summary>
+public sealed class DocumentStoreFactory : IDocumentStoreFactory
+{
+    private readonly IConnectionFactory _connectionFactory;
+    private readonly IJsonSerializer _jsonSerializer;
+    private readonly ITableNamingConvention _tableNamingConvention;
+    private readonly ILoggerFactory? _loggerFactory;
+
+    /// <summary>
+    /// Initializes a new instance of DocumentStoreFactory with default dependencies.
+    /// </summary>
+    public DocumentStoreFactory()
+        : this(new DefaultConnectionFactory())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of DocumentStoreFactory with a custom connection factory.
+    /// </summary>
+    /// <param name="connectionFactory">The connection factory to use</param>
+    public DocumentStoreFactory(IConnectionFactory connectionFactory)
+        : this(connectionFactory, null, null, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of DocumentStoreFactory with all dependencies.
+    /// </summary>
+    /// <param name="connectionFactory">The connection factory to use</param>
+    /// <param name="jsonSerializer">JSON serializer (optional, defaults to SystemTextJsonSerializer)</param>
+    /// <param name="tableNamingConvention">Table naming convention (optional, defaults to DefaultTableNamingConvention)</param>
+    /// <param name="loggerFactory">Logger factory for creating loggers (optional)</param>
+    public DocumentStoreFactory(
+        IConnectionFactory connectionFactory,
+        IJsonSerializer? jsonSerializer,
+        ITableNamingConvention? tableNamingConvention,
+        ILoggerFactory? loggerFactory)
+    {
+        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+        _jsonSerializer = jsonSerializer ?? new SystemTextJsonSerializer();
+        _tableNamingConvention = tableNamingConvention ?? new DefaultTableNamingConvention();
+        _loggerFactory = loggerFactory;
+    }
+
+    /// <inheritdoc/>
+    public IDocumentStore Create(JsonbStoreOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        // Use options-level overrides if provided, otherwise use factory defaults
+        var serializer = options.JsonSerializer ?? _jsonSerializer;
+        var namingConvention = options.TableNamingConvention ?? _tableNamingConvention;
+        var logger = _loggerFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+
+        var connection = _connectionFactory.CreateConnection(options);
+
+        return new DocumentStore(connection, serializer, namingConvention, logger, ownsConnection: true);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IDocumentStore> CreateAsync(JsonbStoreOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        // Use options-level overrides if provided, otherwise use factory defaults
+        var serializer = options.JsonSerializer ?? _jsonSerializer;
+        var namingConvention = options.TableNamingConvention ?? _tableNamingConvention;
+        var logger = _loggerFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+
+        var connection = await _connectionFactory.CreateConnectionAsync(options).ConfigureAwait(false);
+
+        return new DocumentStore(connection, serializer, namingConvention, logger, ownsConnection: true);
+    }
+}

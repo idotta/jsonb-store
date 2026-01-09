@@ -9,38 +9,55 @@ namespace JsonbStore;
 /// <summary>
 /// A high-performance document store for storing JSON objects in SQLite.
 /// Uses Dapper for minimal mapping overhead and supports JSON document storage using JSONB format (SQLite 3.45+).
-/// Does not manage the lifecycle of the SqliteConnection.
+/// Can optionally own and manage the lifecycle of its SqliteConnection.
 /// </summary>
-public class DocumentStore : IDocumentStore
+public sealed class DocumentStore : IDocumentStore
 {
     private readonly SqliteConnection _connection;
     private readonly IJsonSerializer _jsonSerializer;
     private readonly ITableNamingConvention _tableNamingConvention;
     private readonly ILogger<DocumentStore> _logger;
+    private readonly bool _ownsConnection;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new document store with the specified connection and dependencies.
     /// </summary>
-    /// <param name="connection">The open SQLite connection (lifecycle managed by caller)</param>
+    /// <param name="connection">The open SQLite connection</param>
     /// <param name="jsonSerializer">JSON serializer implementation (defaults to SystemTextJsonSerializer)</param>
     /// <param name="tableNamingConvention">Table naming convention (defaults to DefaultTableNamingConvention)</param>
     /// <param name="logger">Logger for diagnostics (optional)</param>
+    /// <param name="ownsConnection">Whether this store owns and should dispose the connection (default: false)</param>
     public DocumentStore(
         SqliteConnection connection,
         IJsonSerializer? jsonSerializer = null,
         ITableNamingConvention? tableNamingConvention = null,
-        ILogger<DocumentStore>? logger = null)
+        ILogger<DocumentStore>? logger = null,
+        bool ownsConnection = false)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _jsonSerializer = jsonSerializer ?? new SystemTextJsonSerializer();
         _tableNamingConvention = tableNamingConvention ?? new DefaultTableNamingConvention();
         _logger = logger ?? NullLogger<DocumentStore>.Instance;
+        _ownsConnection = ownsConnection;
     }
+
+    /// <summary>
+    /// Gets a value indicating whether this store owns and manages the connection lifecycle.
+    /// </summary>
+    public bool OwnsConnection => _ownsConnection;
 
     /// <summary>
     /// Gets the underlying SQLite connection for advanced operations.
     /// </summary>
-    public SqliteConnection Connection => _connection;
+    public SqliteConnection Connection
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _connection;
+        }
+    }
 
     /// <summary>
     /// Creates a table for storing JSON objects with a generic schema using JSONB format.
@@ -49,6 +66,8 @@ public class DocumentStore : IDocumentStore
     /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
     public async Task CreateTableAsync<T>()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateCreateTableSql(tableName);
 
@@ -65,6 +84,8 @@ public class DocumentStore : IDocumentStore
     /// <param name="data">The object to store</param>
     public async Task UpsertAsync<T>(string id, T data)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         if (string.IsNullOrWhiteSpace(id))
         {
             throw new ArgumentException("ID cannot be null or empty.", nameof(id));
@@ -95,6 +116,8 @@ public class DocumentStore : IDocumentStore
     /// <returns>The deserialized object, or default if not found</returns>
     public async Task<T?> GetAsync<T>(string id)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         if (string.IsNullOrWhiteSpace(id))
         {
             throw new ArgumentException("ID cannot be null or empty.", nameof(id));
@@ -125,6 +148,8 @@ public class DocumentStore : IDocumentStore
     /// <returns>An enumerable of deserialized objects</returns>
     public async Task<IEnumerable<T>> GetAllAsync<T>()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateGetAllSql(tableName);
 
@@ -154,6 +179,8 @@ public class DocumentStore : IDocumentStore
     /// <returns>True if the object was deleted, false if it didn't exist</returns>
     public async Task<bool> DeleteAsync<T>(string id)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         if (string.IsNullOrWhiteSpace(id))
         {
             throw new ArgumentException("ID cannot be null or empty.", nameof(id));
@@ -202,6 +229,8 @@ public class DocumentStore : IDocumentStore
     /// </summary>
     private async Task ExecuteInTransactionCoreAsync(Func<IDbTransaction, Task> action)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         // Use existing transaction if any?
         // _connection.BeginTransaction() requires the connection to be open.
         // It throws if a transaction is already active on this connection (SQLite supports one transaction per connection unless using Savepoints).
@@ -213,13 +242,51 @@ public class DocumentStore : IDocumentStore
         using var transaction = _connection.BeginTransaction();
         try
         {
-            await action(transaction);
+            await action(transaction).ConfigureAwait(false);
             transaction.Commit();
         }
         catch
         {
             transaction.Rollback();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Disposes the document store and, if owned, the underlying connection.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (_ownsConnection)
+        {
+            _logger.LogDebug("Disposing owned connection");
+            await _connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Disposes the document store and, if owned, the underlying connection.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (_ownsConnection)
+        {
+            _logger.LogDebug("Disposing owned connection");
+            _connection.Dispose();
         }
     }
 }

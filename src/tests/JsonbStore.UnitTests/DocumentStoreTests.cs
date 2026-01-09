@@ -18,8 +18,8 @@ public class DocumentStoreTests
     {
         // Arrange & Act
         var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
-        var connectionFactory = new DefaultConnectionFactory(options);
-        using var connection = connectionFactory.CreateConnection();
+        var connectionFactory = new DefaultConnectionFactory();
+        using var connection = connectionFactory.CreateConnection(options);
         var store = new DocumentStore(connection);
 
         // Assert
@@ -41,9 +41,9 @@ public class DocumentStoreTests
         // This tests the interaction indirectly through CreateTableAsync
         var testDbPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.db");
         var options = new JsonbStoreOptions { ConnectionString = $"Data Source={testDbPath}" };
-        var connectionFactory = new DefaultConnectionFactory(options);
+        var connectionFactory = new DefaultConnectionFactory();
 
-        using (var connection = connectionFactory.CreateConnection())
+        using (var connection = connectionFactory.CreateConnection(options))
         {
              var store = new DocumentStore(connection);
 
@@ -64,18 +64,39 @@ public class DocumentStoreTests
     }
 
     [Fact]
-    public void Store_DoesNotDisposeConnection()
+    public async Task Store_WithOwnsConnection_DisposesConnection()
     {
         // Arrange
         var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
-        var connectionFactory = new DefaultConnectionFactory(options);
-        var connection = connectionFactory.CreateConnection();
-        var store = new DocumentStore(connection); // Store is created
+        var connectionFactory = new DefaultConnectionFactory();
+        var connection = connectionFactory.CreateConnection(options);
+        var store = new DocumentStore(connection, ownsConnection: true);
 
         // Act
-        // No Dispose method on DocumentStore anymore!
-        
-        // Assert
+        await store.DisposeAsync();
+
+        // Assert - connection should be disposed
+        Assert.Equal(System.Data.ConnectionState.Closed, connection.State);
+
+        if (File.Exists(_testDbPath))
+        {
+            try { File.Delete(_testDbPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task Store_WithoutOwnsConnection_DoesNotDisposeConnection()
+    {
+        // Arrange
+        var options = new JsonbStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var connectionFactory = new DefaultConnectionFactory();
+        var connection = connectionFactory.CreateConnection(options);
+        var store = new DocumentStore(connection, ownsConnection: false);
+
+        // Act
+        await store.DisposeAsync();
+
+        // Assert - connection should still be open
         Assert.Equal(System.Data.ConnectionState.Open, connection.State);
 
         // Cleanup

@@ -1,4 +1,3 @@
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -60,33 +59,23 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(options);
 
-        // Register the options as singleton (configuration should be immutable)
-        services.TryAddSingleton(options);
-
-        // Register default implementations if not already registered
+        // Register core dependencies as singletons (stateless, reusable)
+        services.TryAddSingleton<IConnectionFactory, DefaultConnectionFactory>();
         services.TryAddSingleton<IJsonSerializer, SystemTextJsonSerializer>();
         services.TryAddSingleton<ITableNamingConvention, DefaultTableNamingConvention>();
 
-        // Register connection factory based on options
-        if (options.ConnectionFactory == null)
-        {
-            services.TryAdd(ServiceDescriptor.Describe(
-                typeof(IConnectionFactory),
-                sp => new DefaultConnectionFactory(options),
-                lifetime));
-        }
-        else
-        {
-            services.TryAdd(ServiceDescriptor.Describe(
-                typeof(IConnectionFactory),
-                sp => options.ConnectionFactory,
-                lifetime));
-        }
+        // Register the document store factory
+        services.TryAddSingleton<IDocumentStoreFactory>(sp => new DocumentStoreFactory(
+            sp.GetRequiredService<IConnectionFactory>(),
+            sp.GetRequiredService<IJsonSerializer>(),
+            sp.GetRequiredService<ITableNamingConvention>(),
+            sp.GetService<ILoggerFactory>()));
 
         // Register the DocumentStore with the specified lifetime
+        // The store is created via the factory and owns its connection
         services.TryAdd(ServiceDescriptor.Describe(
             typeof(IDocumentStore),
-            sp => CreateDocumentStore(sp, options),
+            sp => sp.GetRequiredService<IDocumentStoreFactory>().Create(options),
             lifetime));
 
         return services;
@@ -136,53 +125,25 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(serviceKey);
         ArgumentNullException.ThrowIfNull(options);
 
-        // Register shared services if not already registered
+        // Register core dependencies as singletons (stateless, reusable)
+        services.TryAddSingleton<IConnectionFactory, DefaultConnectionFactory>();
         services.TryAddSingleton<IJsonSerializer, SystemTextJsonSerializer>();
         services.TryAddSingleton<ITableNamingConvention, DefaultTableNamingConvention>();
 
-        // Register connection factory for this key
-        if (options.ConnectionFactory == null)
-        {
-            services.Add(ServiceDescriptor.DescribeKeyed(
-                typeof(IConnectionFactory),
-                serviceKey,
-                (sp, key) => new DefaultConnectionFactory(options),
-                lifetime));
-        }
-        else
-        {
-            services.Add(ServiceDescriptor.DescribeKeyed(
-                typeof(IConnectionFactory),
-                serviceKey,
-                (sp, key) => options.ConnectionFactory,
-                lifetime));
-        }
+        // Register the document store factory (shared across all keyed stores)
+        services.TryAddSingleton<IDocumentStoreFactory>(sp => new DocumentStoreFactory(
+            sp.GetRequiredService<IConnectionFactory>(),
+            sp.GetRequiredService<IJsonSerializer>(),
+            sp.GetRequiredService<ITableNamingConvention>(),
+            sp.GetService<ILoggerFactory>()));
 
         // Register the keyed DocumentStore
         services.Add(ServiceDescriptor.DescribeKeyed(
             typeof(IDocumentStore),
             serviceKey,
-            (sp, key) => CreateKeyedDocumentStore(sp, key!, options),
+            (sp, _) => sp.GetRequiredService<IDocumentStoreFactory>().Create(options),
             lifetime));
 
         return services;
-    }
-
-    private static DocumentStore CreateDocumentStore(IServiceProvider serviceProvider, JsonbStoreOptions options)
-    {
-        var jsonSerializer = options.JsonSerializer ?? serviceProvider.GetRequiredService<IJsonSerializer>();
-        var tableNamingConvention = options.TableNamingConvention ?? serviceProvider.GetRequiredService<ITableNamingConvention>();
-        var logger = serviceProvider.GetService<ILogger<DocumentStore>>();
-
-        return new DocumentStore(connection, jsonSerializer, tableNamingConvention, logger);
-    }
-
-    private static DocumentStore CreateKeyedDocumentStore(IServiceProvider serviceProvider, object key, JsonbStoreOptions options)
-    {
-        var jsonSerializer = options.JsonSerializer ?? serviceProvider.GetRequiredService<IJsonSerializer>();
-        var tableNamingConvention = options.TableNamingConvention ?? serviceProvider.GetRequiredService<ITableNamingConvention>();
-        var logger = serviceProvider.GetService<ILogger<DocumentStore>>();
-
-        return new DocumentStore(connection, jsonSerializer, tableNamingConvention, logger);
     }
 }

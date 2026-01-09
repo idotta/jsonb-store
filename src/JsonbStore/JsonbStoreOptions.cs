@@ -65,12 +65,6 @@ public class JsonbStoreOptions
     public int MaxPoolSize { get; set; } = 10;
 
     /// <summary>
-    /// Gets or sets whether to automatically create tables on first use.
-    /// Default is true.
-    /// </summary>
-    public bool AutoCreateTables { get; set; } = true;
-
-    /// <summary>
     /// Gets or sets the default table naming convention.
     /// If null, uses the simple type name as table name.
     /// </summary>
@@ -81,12 +75,6 @@ public class JsonbStoreOptions
     /// If null, uses System.Text.Json with default settings.
     /// </summary>
     public IJsonSerializer? JsonSerializer { get; set; }
-
-    /// <summary>
-    /// Gets or sets the connection factory.
-    /// If null, creates a default factory based on ConnectionString.
-    /// </summary>
-    public IConnectionFactory? ConnectionFactory { get; set; }
 
     /// <summary>
     /// Gets or sets additional PRAGMA statements to execute on connection open.
@@ -192,11 +180,9 @@ public class JsonbStoreOptions
             EnableForeignKeys = EnableForeignKeys,
             UseConnectionPooling = UseConnectionPooling,
             MaxPoolSize = MaxPoolSize,
-            AutoCreateTables = AutoCreateTables,
             TableNamingConvention = TableNamingConvention,
             JsonSerializer = JsonSerializer,
-            ConnectionFactory = ConnectionFactory,
-            AdditionalPragmas = new List<string>(AdditionalPragmas)
+            AdditionalPragmas = [.. AdditionalPragmas]
         };
     }
 }
