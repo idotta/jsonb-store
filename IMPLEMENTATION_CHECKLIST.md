@@ -113,10 +113,16 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] Composite index support via `CreateCompositeIndexAsync<T>`
   - [x] Index existence checking before creation
 
-- [ ] **Schema versioning**
-  - [ ] Simple migration table (`__store_migrations`)
-  - [ ] Up/down migration support
-  - [ ] Schema introspection helpers
+- [x] **Schema versioning**
+  - [x] Simple migration table (`__store_migrations`)
+  - [x] Up/down migration support
+  - [x] Schema introspection helpers
+  - [x] `MigrationRunner` class for managing migrations independently from DocumentStore
+  - [x] `IMigration` interface and `Migration` base class
+  - [x] `SchemaIntrospector` public class for querying database schema independently
+  - [x] Table, column, and index introspection methods
+  - [x] Database statistics retrieval
+  - [x] Clean separation: users pass connection to MigrationRunner and SchemaIntrospector directly
 
 ---
 
@@ -327,7 +333,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 - [ ] **NuGet package**
   - [ ] Proper `.nuspec` or SDK-style properties
-  - [ ] Source Link for debugging
+  - [ ] Source Link for debugging .snupkg
   - [ ] README in package
   - [ ] Icon and license metadata
 

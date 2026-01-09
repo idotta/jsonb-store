@@ -1,5 +1,4 @@
 using Dapper;
-using Microsoft.Data.Sqlite;
 using Xunit;
 
 namespace LiteDocumentStore.UnitTests;
