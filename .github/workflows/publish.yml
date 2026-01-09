@@ -16,20 +16,20 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore dependencies
-        run: dotnet restore src/jsonb-store.slnx
+        run: dotnet restore src/LiteDocumentStore.slnx
 
       - name: Build
-        run: dotnet build src/jsonb-store.slnx --no-restore --configuration Release
+        run: dotnet build src/LiteDocumentStore.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test src/jsonb-store.slnx --no-build --configuration Release
+        run: dotnet test src/LiteDocumentStore.slnx --no-build --configuration Release
 
       - name: Set Version
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Pack
-        run: dotnet pack src/JsonbStore/JsonbStore.csproj --no-build --configuration Release --output . -p:PackageVersion=${{ env.VERSION }} --include-symbols -p:SymbolPackageFormat=snupkg
+        run: dotnet pack src/LiteDocumentStore/LiteDocumentStore.csproj --no-build --configuration Release --output . -p:PackageVersion=${{ env.VERSION }} --include-symbols -p:SymbolPackageFormat=snupkg
 
       - name: Push to NuGet
         run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}

@@ -153,7 +153,7 @@ Add these badges to your README:
 ```markdown
 [![CI](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml)
 [![Code Quality](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml)
-[![NuGet](https://img.shields.io/nuget/v/JsonbStore.svg)](https://www.nuget.org/packages/JsonbStore/)
+[![NuGet](https://img.shields.io/nuget/v/LiteDocumentStore.svg)](https://www.nuget.org/packages/LiteDocumentStore/)
 [![codecov](https://codecov.io/gh/idotta/jsonb-store/branch/main/graph/badge.svg)](https://codecov.io/gh/idotta/jsonb-store)
 ```
 
@@ -169,7 +169,7 @@ Add these badges to your README:
 
 1. Verify `NUGET_API_KEY` secret is set correctly
 2. Check that the version number doesn't already exist on NuGet.org
-3. Ensure the package ID `JsonbStore` is available or owned by you
+3. Ensure the package ID `LiteDocumentStore` is available or owned by you
 
 ### Coverage Report Issues
 

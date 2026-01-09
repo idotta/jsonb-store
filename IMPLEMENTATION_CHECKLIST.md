@@ -1,41 +1,107 @@
-# JsonbStore Implementation Checklist
+# LiteDocumentStore Implementation Checklist
 
 A comprehensive checklist for building a production-ready hybrid SQLite library that provides convenient JSON document storage while preserving full relational database capabilities.
 
 ---
 
+## ⚠️ Recent Unplanned Changes (Phase 1 Extensions)
+
+The implementation has progressed beyond the original Phase 1 scope with several architectural improvements:
+
+### Core Architecture Enhancements
+- ✅ **Connection Ownership Pattern**: DocumentStore now supports `ownsConnection` parameter for flexible lifecycle management
+- ✅ **Factory Pattern Implementation**: Added `IDocumentStoreFactory` and `DocumentStoreFactory` for proper composition
+- ✅ **SqlGenerator Extraction**: SQL generation moved to separate `SqlGenerator` class for testability
+- ✅ **Transaction Support**: Implemented `ExecuteInTransactionAsync` with multiple overloads
+
+### Configuration & Builder Pattern
+- ✅ **Fluent Builder API**: Complete `DocumentStoreOptionsBuilder` with method chaining
+- ✅ **Advanced Connection Options**: Added pooling config, foreign keys, busy timeout, and additional pragmas
+- ✅ **Per-Store Customization**: Options can override serializer and naming conventions per instance
+
+### DI & Multi-Database Support
+- ✅ **Keyed Services**: Full support for multiple database instances via `AddKeyedLiteDocumentStore()`
+- ✅ **Factory Registration**: Automatic registration of `IDocumentStoreFactory` in DI container
+- ✅ **Configurable Lifetimes**: Support for Singleton, Scoped, and Transient registrations
+
+### Logging & Observability
+- ✅ **Comprehensive Logging**: Debug and Information level logging throughout all operations
+- ✅ **NullLogger Support**: Graceful fallback when no logger is configured
+
+### Testing
+- ✅ **Expanded Test Coverage**: Unit tests for ownership patterns, disposal, and table naming
+- ✅ **Integration Tests**: Full CRUD operations, transactions with commit/rollback verification
+
+---
+
 ## 1. Core Architecture & Abstractions
 
-- [ ] **Define interfaces for extensibility**
-  - [ ] `IRepository<T>` - Generic repository contract
-  - [ ] `IJsonSerializer` - Pluggable JSON serialization (System.Text.Json, Newtonsoft, etc.)
-  - [ ] `IConnectionFactory` - Connection lifecycle management
-  - [ ] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
+- [x] **Define interfaces for extensibility**
+  - [x] `IDocumentStore` - Generic document store contract (formerly `IRepository`)
+  - [x] `IJsonSerializer` - Pluggable JSON serialization (System.Text.Json, Newtonsoft, etc.)
+  - [x] `IConnectionFactory` - Connection lifecycle management
+  - [x] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
+  - [x] **NEW**: `IDocumentStoreFactory` - Factory for creating configured document stores
 
-- [ ] **Configuration system**
-  - [ ] `JsonbStoreOptions` class with builder pattern
-  - [ ] WAL mode toggle, synchronous level, page size, cache size
-  - [ ] Connection string builder for common scenarios
-  - [ ] Support for in-memory databases (`:memory:`, shared cache)
+- [x] **Configuration system**
+  - [x] `DocumentStoreOptions` class with builder pattern
+  - [x] WAL mode toggle, synchronous level, page size, cache size
+  - [x] Connection string builder for common scenarios
+  - [x] Support for in-memory databases (`:memory:`, shared cache)
+  - [x] **NEW**: `DocumentStoreOptionsBuilder` with fluent API
+  - [x] **NEW**: Factory methods for in-memory, shared in-memory, and file-based databases
+  - [x] **NEW**: Support for additional pragmas and custom serializer/naming convention per-store
+  - [x] **NEW**: Connection pooling configuration (UseConnectionPooling, MaxPoolSize)
+  - [x] **NEW**: Foreign keys and busy timeout configuration
 
-- [ ] **Dependency Injection support**
-  - [ ] `IServiceCollection.AddJsonbStore()` extension method
-  - [ ] Scoped vs Singleton connection strategies
-  - [ ] Named/keyed repository registration for multiple databases
+- [x] **Dependency Injection support**
+  - [x] `IServiceCollection.AddLiteDocumentStore()` extension method
+  - [x] Registers `SqliteConnection` for hybrid usage
+  - [x] Scoped vs Singleton connection strategies
+  - [x] Named/keyed store registration for multiple databases (keyed services for .NET 8+)
+  - [x] **NEW**: `AddKeyedLiteDocumentStore()` for managing multiple database instances
+  - [x] **NEW**: Automatic factory registration (`IDocumentStoreFactory`)
+  - [x] **NEW**: Configurable service lifetime (Singleton, Scoped, Transient)
+  - [x] **NEW**: Core dependencies registered as singletons (stateless services)
+
+- [x] **Refactor existing `Repository.cs`**
+  - [x] Rename to `DocumentStore` supporting `IDocumentStore`
+  - [x] Decouple connection lifecycle (doesn't own connection)
+  - [x] Replace direct `System.Text.Json` calls with `IJsonSerializer`
+  - [x] Replace hardcoded `GetTableName<T>()` with `ITableNamingConvention`
+  - [x] Accept `SqliteConnection` in constructor
+  - [x] Use `IConnectionFactory` for creation (via DI)
+  - [x] Add input validation (null/empty ID checks, etc.)
+  - [x] Add `ILogger` integration for diagnostics
+  - [x] Extract SQL generation to internal helper (for testability)
+  - [x] **NEW**: Add configurable connection ownership (`ownsConnection` parameter)
+  - [x] **NEW**: Implement `ExecuteInTransactionAsync` overloads for batch operations
+  - [x] **NEW**: Internal implementation with proper disposal pattern
 
 ---
 
 ## 2. Connection & Lifecycle Management
 
-- [ ] **Connection pooling strategy**
-  - [ ] Single long-lived connection mode (current)
-  - [ ] Pool mode with `SqliteConnectionPool` wrapper
+- [x] **Connection pooling strategy**
+  - [x] Single long-lived connection mode (current)
+  - [x] **NEW**: Configuration options for pooling (UseConnectionPooling, MaxPoolSize)
+  - [ ] Pool mode with `SqliteConnectionPool` wrapper (planned, not yet implemented)
   - [ ] Configurable pool size and timeout
 
-- [ ] **Proper resource management**
-  - [ ] `IAsyncDisposable` pattern (exists, verify correctness)
+- [x] **Proper resource management**
+  - [x] `IAsyncDisposable` pattern (exists, verified correct)
+  - [x] `IDisposable` pattern for synchronous disposal
+  - [x] **NEW**: Conditional connection disposal based on ownership
+  - [x] **NEW**: Connection state validation in property accessor
   - [ ] Connection state validation before operations
   - [ ] Graceful shutdown with WAL checkpoint
+
+- [x] **Factory pattern implementation**
+  - [x] **NEW**: `IDocumentStoreFactory` interface
+  - [x] **NEW**: `DefaultConnectionFactory` implementation
+  - [x] **NEW**: `DocumentStoreFactory` for creating configured stores
+  - [x] **NEW**: Async factory methods (`CreateAsync`, `CreateConnectionAsync`)
+  - [x] **NEW**: Connection configuration via `ConfigureConnection` and `ConfigureConnectionAsync`
 
 - [ ] **Health checks**
   - [ ] `IsHealthyAsync()` method for liveness probes
@@ -65,6 +131,12 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
 ---
 
 ## 4. CRUD Operations Enhancement
+
+- [x] **Transaction Support**
+  - [x] **NEW**: `ExecuteInTransactionAsync` with two overloads (with/without IDbTransaction)
+  - [x] **NEW**: Automatic commit on success, rollback on exception
+  - [ ] Return affected rows count or the entity itself
+  - [ ] Support partial updates (PATCH semantics with `json_patch()`)
 
 - [ ] **Improved Upsert**
   - [ ] Return affected rows count or the entity itself
@@ -103,10 +175,10 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
   ```
 
 - [ ] **Raw SQL escape hatch** (critical for hybrid use)
+  - [x] **IMPLEMENTED**: Direct access to Dapper's full API via `Connection` property (exists)
   - [ ] `ExecuteAsync(string sql, object? param = null)`
   - [ ] `QueryAsync<TResult>(string sql, object? param = null)`
   - [ ] `QueryFirstOrDefaultAsync<TResult>(string sql, object? param = null)`
-  - [ ] Direct access to Dapper's full API via `Connection` property (exists)
 
 - [ ] **Projection queries**
   - [ ] Select specific JSON fields only
@@ -157,28 +229,33 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
 
 ## 8. Error Handling & Resilience
 
-- [ ] **Custom exceptions**
-  - [ ] `JsonbStoreException` base class
+- [x] **Custom exceptions** (basic implementation)
+  - [x] **NEW**: Built-in .NET exceptions used appropriately (ArgumentNullException, ObjectDisposedException, etc.)
+  - [ ] `LiteDocumentStoreException` base class
   - [ ] `TableNotFoundException`, `SerializationException`, `ConcurrencyException`
   - [ ] Preserve inner SQLite exceptions
+
+- [x] **Validation**
+  - [x] Validate ID is not null/empty before operations
+  - [x] Validate data is not null before upsert
+  - [x] **NEW**: Null checks with ArgumentNullException.ThrowIfNull()
+  - [ ] Optional data validation via `IValidatableObject` or custom validator
 
 - [ ] **Retry policies**
   - [ ] Configurable retry on `SQLITE_BUSY` and `SQLITE_LOCKED`
   - [ ] Exponential backoff with jitter
   - [ ] Optional Polly integration
 
-- [ ] **Validation**
-  - [ ] Validate ID is not null/empty before operations
-  - [ ] Optional data validation via `IValidatableObject` or custom validator
-
 ---
 
 ## 9. Observability
 
-- [ ] **Logging**
-  - [ ] `ILogger<Repository>` integration
+- [x] **Logging**
+  - [x] `ILogger<DocumentStore>` integration
+  - [x] **NEW**: Debug-level logging for all operations (CreateTable, Upsert, Get, Delete, etc.)
+  - [x] **NEW**: Information-level logging for significant events
+  - [x] **NEW**: NullLogger support when no logger is provided
   - [ ] Log slow queries (configurable threshold)
-  - [ ] Debug-level SQL logging
 
 - [ ] **Metrics**
   - [ ] Operation counters (inserts, updates, deletes, queries)
@@ -210,31 +287,41 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
 
 ## 11. Testing Infrastructure
 
-- [ ] **Unit tests** (mock connection)
-  - [ ] Test all public API methods
-  - [ ] Edge cases: null, empty, special characters in ID
+- [x] **Unit tests** (mock connection)
+  - [x] Test all public API methods
+  - [x] **NEW**: Connection ownership tests (ownsConnection parameter)
+  - [x] **NEW**: Disposal pattern verification
+  - [x] Edge cases: null, empty, special characters in ID
   - [ ] Concurrency scenarios
 
-- [ ] **Integration tests** (real SQLite)
-  - [ ] In-memory database for speed
+- [x] **Integration tests** (real SQLite)
+  - [x] In-memory database for speed
+  - [x] **NEW**: Full CRUD operation testing
+  - [x] **NEW**: Transaction commit and rollback tests
+  - [x] **NEW**: GetAllAsync, DeleteAsync verification
   - [ ] File-based database for WAL testing
   - [ ] Multi-connection concurrency tests
 
 - [ ] **Test helpers**
-  - [ ] `JsonbStoreTestFixture` for easy test setup
+  - [ ] `LiteDocumentStoreTestFixture` for easy test setup
   - [ ] Database seeding utilities
 
 ---
 
 ## 12. Documentation & Developer Experience
 
-- [ ] **XML documentation**
-  - [ ] All public APIs documented (partially exists)
+- [x] **XML documentation**
+  - [x] All public APIs documented
+  - [x] **NEW**: Comprehensive XML docs for all interfaces and public classes
+  - [x] **NEW**: Parameter descriptions and return value documentation
   - [ ] Include examples in `<example>` tags
   - [ ] Generate API reference site
 
-- [ ] **README improvements**
-  - [ ] Quick start guide with code examples
+- [x] **README improvements**
+  - [x] Quick start guide with code examples
+  - [x] **NEW**: Features list with checkmarks
+  - [x] **NEW**: JSONB benefits explained
+  - [x] **NEW**: CI/CD badges
   - [ ] Common patterns and recipes
   - [ ] FAQ section
   - [ ] Performance tuning guide

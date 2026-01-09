@@ -104,19 +104,24 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        dotnet test tests/JsonbStore.UnitTests/JsonbStore.UnitTests.csproj --configuration Release \
+        dotnet test tests/LiteDocumentStore.UnitTests/LiteDocumentStore.UnitTests.csproj --configuration Release \
           --collect:"XPlat Code Coverage" \
-          --results-directory ./coverage \
+          --results-directory ../coverage \
           --logger "trx;LogFileName=unit-test-results.trx"
-        dotnet test tests/JsonbStore.IntegrationTests/JsonbStore.IntegrationTests.csproj --configuration Release \
+        dotnet test tests/LiteDocumentStore.IntegrationTests/LiteDocumentStore.IntegrationTests.csproj --configuration Release \
           --collect:"XPlat Code Coverage" \
-          --results-directory ./coverage \
+          --results-directory ../coverage \
           --logger "trx;LogFileName=integration-test-results.trx"
+
+    - name: List coverage files (debug)
+      run: |
+        echo "Contents of coverage directory:"
+        ls -R ./coverage || echo "No coverage directory found"
 
     - name: Generate coverage report
       uses: danielpalme/ReportGenerator-GitHub-Action@5.5.1
       with:
-        reports: './coverage/**/coverage.xml'
+        reports: './coverage/**/coverage.cobertura.xml'
         targetdir: './coverage-report'
         reporttypes: 'HtmlInline;Badges;MarkdownSummaryGithub'
 

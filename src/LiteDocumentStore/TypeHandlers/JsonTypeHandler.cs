@@ -2,14 +2,14 @@ using Dapper;
 using System.Data;
 using System.Text.Json;
 
-namespace JsonbStore;
+namespace LiteDocumentStore;
 
 /// <summary>
 /// A Dapper TypeHandler that automatically serializes and deserializes JSON objects
 /// to/from SQLite TEXT or BLOB columns.
 /// </summary>
 /// <typeparam name="T">The type of object to serialize/deserialize</typeparam>
-public class JsonTypeHandler<T> : SqlMapper.TypeHandler<T>
+public sealed class JsonTypeHandler<T> : SqlMapper.TypeHandler<T>
 {
     private readonly JsonSerializerOptions _options;
 

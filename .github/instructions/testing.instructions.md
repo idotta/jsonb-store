@@ -10,9 +10,9 @@
 
 ```
 tests/
-├── JsonbStore.UnitTests/           # Fast, isolated tests
+├── LiteDocumentStore.UnitTests/           # Fast, isolated tests
 │   └── RepositoryTests.cs
-└── JsonbStore.IntegrationTests/    # Real database tests
+└── LiteDocumentStore.IntegrationTests/    # Real database tests
     └── RepositoryIntegrationTests.cs
 ```
 

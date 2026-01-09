@@ -1,8 +1,8 @@
-# JSONB-STORE
+# LiteDocumentStore
 
 [![CI](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/ci.yml)
 [![Code Quality](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml/badge.svg)](https://github.com/idotta/jsonb-store/actions/workflows/code-quality.yml)
-[![NuGet](https://img.shields.io/nuget/v/JsonbStore.svg)](https://www.nuget.org/packages/JsonbStore/)
+[![NuGet](https://img.shields.io/nuget/v/LiteDocumentStore.svg)](https://www.nuget.org/packages/LiteDocumentStore/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A high-performance, single-file application data format using C#, SQLite (Microsoft.Data.Sqlite), and Dapper.

@@ -8,8 +8,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     
     <!-- NuGet Package Metadata -->
-    <PackageId>JsonbStore</PackageId>
-    <Title>JSONB-Store</Title>
+    <PackageId>LiteDocumentStore</PackageId>
+    <Title>LiteDocumentStore</Title>
     <Authors>idotta</Authors>
     <Description>A high-performance, single-file application data format using C#, SQLite, and Dapper. Stores JSON data in SQLite's JSONB format for optimal performance.</Description>
     <PackageTags>sqlite;jsonb;json;database;repository;async;dapper;orm;document-store</PackageTags>
@@ -28,6 +28,8 @@
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +38,11 @@
 
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LiteDocumentStore.IntegrationTests" />
+    <InternalsVisibleTo Include="LiteDocumentStore.UnitTests" />
   </ItemGroup>
 
 </Project>

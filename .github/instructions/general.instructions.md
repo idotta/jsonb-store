@@ -1,8 +1,8 @@
-# JsonbStore Project Instructions
+# LiteDocumentStore Project Instructions
 
 ## Project Overview
 
-JsonbStore is a high-performance, hybrid SQLite library for .NET that combines:
+LiteDocumentStore is a high-performance, hybrid SQLite library for .NET that combines:
 - **Document store convenience**: JSON/JSONB storage with automatic serialization
 - **Relational database power**: Full SQL access, joins, indexes, and traditional tables
 
@@ -29,13 +29,13 @@ The goal is NOT an opaque document database. Users should seamlessly mix documen
 
 ```
 src/
-├── JsonbStore/                    # Main library
+├── LiteDocumentStore/                    # Main library
 │   ├── Repository.cs              # Core repository implementation
 │   ├── SqliteJsonbTypeHandler.cs  # Dapper type handler for JSONB
 │   └── JsonTypeHandler.cs         # Alternative type handler
 └── tests/
-    ├── JsonbStore.UnitTests/      # Unit tests (mocked)
-    └── JsonbStore.IntegrationTests/ # Integration tests (real SQLite)
+    ├── LiteDocumentStore.UnitTests/      # Unit tests (mocked)
+    └── LiteDocumentStore.IntegrationTests/ # Integration tests (real SQLite)
 ```
 
 ## When Modifying This Project
