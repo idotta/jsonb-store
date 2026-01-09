@@ -11,10 +11,10 @@
     <PackageId>LiteDocumentStore</PackageId>
     <Title>LiteDocumentStore</Title>
     <Authors>idotta</Authors>
-    <Description>A high-performance, single-file application data format using C#, SQLite, and Dapper. Stores JSON data in SQLite's LiteDocument format for optimal performance.</Description>
+    <Description>A high-performance, single-file application data format using C#, SQLite, and Dapper. Stores JSON data in SQLite's JSONB format for optimal performance.</Description>
     <PackageTags>sqlite;jsonb;json;database;repository;async;dapper;orm;document-store</PackageTags>
-    <PackageProjectUrl>https://github.com/idotta/LiteDocument-store</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/idotta/LiteDocument-store</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/idotta/jsonb-store</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/idotta/jsonb-store</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
