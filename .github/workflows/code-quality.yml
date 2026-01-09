@@ -104,13 +104,13 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        dotnet test src/tests/LiteDocumentStore.UnitTests/LiteDocumentStore.UnitTests.csproj --configuration Release \
+        dotnet test tests/LiteDocumentStore.UnitTests/LiteDocumentStore.UnitTests.csproj --configuration Release \
           --collect:"XPlat Code Coverage" \
-          --results-directory ./coverage \
+          --results-directory ../coverage \
           --logger "trx;LogFileName=unit-test-results.trx"
-        dotnet test src/tests/LiteDocumentStore.IntegrationTests/LiteDocumentStore.IntegrationTests.csproj --configuration Release \
+        dotnet test tests/LiteDocumentStore.IntegrationTests/LiteDocumentStore.IntegrationTests.csproj --configuration Release \
           --collect:"XPlat Code Coverage" \
-          --results-directory ./coverage \
+          --results-directory ../coverage \
           --logger "trx;LogFileName=integration-test-results.trx"
 
     - name: List coverage files (debug)
