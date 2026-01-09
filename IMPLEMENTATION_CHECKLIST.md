@@ -107,20 +107,14 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ## 3. Schema & Migration Management
 
-- [ ] **Table creation improvements**
-  - [ ] Support custom table names via attribute or fluent config
-  - [ ] Optional `version` column for optimistic concurrency
-  - [ ] Optional soft-delete (`deleted_at` column)
-  - [ ] Configurable primary key types (GUID, string, int with auto-increment)
-
-- [ ] **Index management**
-  - [ ] `CreateIndexAsync<T>(Expression<Func<T, object>> jsonPath)` for JSON path indexes
-  - [ ] Automatic index on `id` (already exists via PRIMARY KEY)
-  - [ ] Composite index support
-  - [ ] Index existence checking before creation
+- [x] **Index management**
+  - [x] `CreateIndexAsync<T>(Expression<Func<T, object>> jsonPath)` for JSON path indexes
+  - [x] Automatic index on `id` (already exists via PRIMARY KEY)
+  - [x] Composite index support via `CreateCompositeIndexAsync<T>`
+  - [x] Index existence checking before creation
 
 - [ ] **Schema versioning**
-  - [ ] Simple migration table (`__jsonb_migrations`)
+  - [ ] Simple migration table (`__store_migrations`)
   - [ ] Up/down migration support
   - [ ] Schema introspection helpers
 

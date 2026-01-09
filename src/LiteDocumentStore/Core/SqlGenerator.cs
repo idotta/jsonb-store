@@ -56,4 +56,35 @@ internal static class SqlGenerator
     {
         return $"DELETE FROM [{tableName}] WHERE id = @Id";
     }
+
+    /// <summary>
+    /// Generates SQL to check if an index exists.
+    /// </summary>
+    public static string GenerateCheckIndexExistsSql()
+    {
+        return "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=@IndexName";
+    }
+
+    /// <summary>
+    /// Generates SQL for creating an index on a JSON path.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="indexName">The index name</param>
+    /// <param name="jsonPath">The JSON path to index (e.g., '$.email')</param>
+    public static string GenerateCreateJsonIndexSql(string tableName, string indexName, string jsonPath)
+    {
+        return $"CREATE INDEX IF NOT EXISTS [{indexName}] ON [{tableName}] (json_extract(data, '{jsonPath}'))";
+    }
+
+    /// <summary>
+    /// Generates SQL for creating a composite index on multiple JSON paths.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="indexName">The index name</param>
+    /// <param name="jsonPaths">The JSON paths to index</param>
+    public static string GenerateCreateCompositeJsonIndexSql(string tableName, string indexName, IEnumerable<string> jsonPaths)
+    {
+        var extractClauses = string.Join(", ", jsonPaths.Select(p => $"json_extract(data, '{p}')"));
+        return $"CREATE INDEX IF NOT EXISTS [{indexName}] ON [{tableName}] ({extractClauses})";
+    }
 }

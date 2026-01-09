@@ -73,6 +73,26 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     Task<bool> IsHealthyAsync();
 
     /// <summary>
+    /// Creates an index on a JSON path expression for optimized query performance.
+    /// Automatically checks if the index exists before creation to avoid errors.
+    /// </summary>
+    /// <typeparam name="T">Type whose table will have the index created</typeparam>
+    /// <param name="jsonPath">Expression selecting the JSON property to index</param>
+    /// <param name="indexName">Optional custom index name. If null, a name will be auto-generated</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task CreateIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>> jsonPath, string? indexName = null);
+
+    /// <summary>
+    /// Creates a composite index on multiple JSON path expressions for optimized multi-column queries.
+    /// Automatically checks if the index exists before creation to avoid errors.
+    /// </summary>
+    /// <typeparam name="T">Type whose table will have the index created</typeparam>
+    /// <param name="jsonPaths">Array of expressions selecting the JSON properties to index</param>
+    /// <param name="indexName">Optional custom index name. If null, a name will be auto-generated</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    Task CreateCompositeIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>>[] jsonPaths, string? indexName = null);
+
+    /// <summary>
     /// Gets the underlying SQLite connection for advanced operations and raw SQL access.
     /// This enables the hybrid experience where users can use both document storage
     /// and traditional relational database features.

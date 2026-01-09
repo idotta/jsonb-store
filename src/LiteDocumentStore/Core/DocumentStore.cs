@@ -273,6 +273,153 @@ internal sealed class DocumentStore : IDocumentStore
     }
 
     /// <summary>
+    /// Creates an index on a JSON path expression for optimized query performance.
+    /// Automatically checks if the index exists before creation to avoid errors.
+    /// </summary>
+    /// <typeparam name="T">Type whose table will have the index created</typeparam>
+    /// <param name="jsonPath">Expression selecting the JSON property to index</param>
+    /// <param name="indexName">Optional custom index name. If null, a name will be auto-generated</param>
+    public async Task CreateIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>> jsonPath, string? indexName = null)
+    {
+        ArgumentNullException.ThrowIfNull(jsonPath);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var pathString = ExtractJsonPath(jsonPath);
+        var finalIndexName = indexName ?? GenerateIndexName(tableName, pathString);
+
+        _logger.LogDebug("Creating index {IndexName} on table {TableName} for path {JsonPath}", 
+            finalIndexName, tableName, pathString);
+
+        // Check if index already exists
+        var indexExists = await _connection.QueryFirstOrDefaultAsync<int>(
+            SqlGenerator.GenerateCheckIndexExistsSql(),
+            new { IndexName = finalIndexName }).ConfigureAwait(false);
+
+        if (indexExists > 0)
+        {
+            _logger.LogDebug("Index {IndexName} already exists, skipping creation", finalIndexName);
+            return;
+        }
+
+        var sql = SqlGenerator.GenerateCreateJsonIndexSql(tableName, finalIndexName, pathString);
+        await _connection.ExecuteAsync(sql).ConfigureAwait(false);
+
+        _logger.LogInformation("Index {IndexName} created successfully on table {TableName} for path {JsonPath}",
+            finalIndexName, tableName, pathString);
+    }
+
+    /// <summary>
+    /// Creates a composite index on multiple JSON path expressions for optimized multi-column queries.
+    /// Automatically checks if the index exists before creation to avoid errors.
+    /// </summary>
+    /// <typeparam name="T">Type whose table will have the index created</typeparam>
+    /// <param name="jsonPaths">Array of expressions selecting the JSON properties to index</param>
+    /// <param name="indexName">Optional custom index name. If null, a name will be auto-generated</param>
+    public async Task CreateCompositeIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>>[] jsonPaths, string? indexName = null)
+    {
+        ArgumentNullException.ThrowIfNull(jsonPaths);
+        if (jsonPaths.Length == 0)
+        {
+            throw new ArgumentException("At least one JSON path is required for composite index.", nameof(jsonPaths));
+        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var pathStrings = jsonPaths.Select(ExtractJsonPath);
+        var finalIndexName = indexName ?? GenerateCompositeIndexName(tableName, pathStrings);
+
+        _logger.LogDebug("Creating composite index {IndexName} on table {TableName} for paths [{JsonPaths}]",
+            finalIndexName, tableName, string.Join(", ", pathStrings));
+
+        // Check if index already exists
+        var indexExists = await _connection.QueryFirstOrDefaultAsync<int>(
+            SqlGenerator.GenerateCheckIndexExistsSql(),
+            new { IndexName = finalIndexName }).ConfigureAwait(false);
+
+        if (indexExists > 0)
+        {
+            _logger.LogDebug("Composite index {IndexName} already exists, skipping creation", finalIndexName);
+            return;
+        }
+
+        var sql = SqlGenerator.GenerateCreateCompositeJsonIndexSql(tableName, finalIndexName, pathStrings);
+        await _connection.ExecuteAsync(sql).ConfigureAwait(false);
+
+        _logger.LogInformation("Composite index {IndexName} created successfully on table {TableName} for paths [{JsonPaths}]",
+            finalIndexName, tableName, string.Join(", ", pathStrings));
+    }
+
+    /// <summary>
+    /// Extracts the JSON path from a lambda expression.
+    /// Supports simple property access (e.g., x => x.Email) and nested properties (e.g., x => x.Address.City).
+    /// </summary>
+    private static string ExtractJsonPath<T>(System.Linq.Expressions.Expression<Func<T, object>> expression)
+    {
+        var body = expression.Body;
+
+        // Handle convert expressions (when boxing value types to object)
+        if (body is System.Linq.Expressions.UnaryExpression unary && unary.NodeType == System.Linq.Expressions.ExpressionType.Convert)
+        {
+            body = unary.Operand;
+        }
+
+        var members = new List<string>();
+        var current = body;
+
+        while (current is System.Linq.Expressions.MemberExpression memberExpr)
+        {
+            members.Insert(0, memberExpr.Member.Name);
+            current = memberExpr.Expression;
+        }
+
+        if (members.Count == 0)
+        {
+            throw new ArgumentException(
+                "Expression must be a property access (e.g., x => x.Email or x => x.Address.City).",
+                nameof(expression));
+        }
+
+        // Convert property names to JSON path format (camelCase convention)
+        var jsonPath = "$." + string.Join(".", members.Select(ToCamelCase));
+        return jsonPath;
+    }
+
+    /// <summary>
+    /// Converts a property name to camelCase for JSON path.
+    /// </summary>
+    private static string ToCamelCase(string str)
+    {
+        if (string.IsNullOrEmpty(str) || char.IsLower(str[0]))
+        {
+            return str;
+        }
+
+        return char.ToLowerInvariant(str[0]) + str[1..];
+    }
+
+    /// <summary>
+    /// Generates an index name from table name and JSON path.
+    /// </summary>
+    private static string GenerateIndexName(string tableName, string jsonPath)
+    {
+        // Remove special characters and convert to valid index name
+        var pathPart = jsonPath.Replace("$.", "").Replace(".", "_");
+        return $"idx_{tableName}_{pathPart}";
+    }
+
+    /// <summary>
+    /// Generates a composite index name from table name and multiple JSON paths.
+    /// </summary>
+    private static string GenerateCompositeIndexName(string tableName, IEnumerable<string> jsonPaths)
+    {
+        var pathsPart = string.Join("_", jsonPaths.Select(p => p.Replace("$.", "").Replace(".", "_")));
+        return $"idx_{tableName}_composite_{pathsPart}";
+    }
+
+    /// <summary>
     /// Checks if the document store is healthy and ready for operations.
     /// Validates the connection state and SQLite version (requires 3.45+ for JSONB support).
     /// </summary>
