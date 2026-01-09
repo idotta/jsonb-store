@@ -273,6 +273,67 @@ internal sealed class DocumentStore : IDocumentStore
     }
 
     /// <summary>
+    /// Checks if the document store is healthy and ready for operations.
+    /// Validates the connection state and SQLite version (requires 3.45+ for JSONB support).
+    /// </summary>
+    /// <returns>True if the store is healthy and ready for operations, false otherwise</returns>
+    public async Task<bool> IsHealthyAsync()
+    {
+        try
+        {
+            // Don't check _disposed here - we want to return false instead of throwing
+            if (_disposed)
+            {
+                _logger.LogWarning("Health check failed: DocumentStore is disposed");
+                return false;
+            }
+
+            // Check connection state
+            if (_connection.State != ConnectionState.Open)
+            {
+                _logger.LogWarning("Health check failed: Connection is not open (state: {State})", _connection.State);
+                return false;
+            }
+
+            // Verify SQLite version supports JSONB (3.45+)
+            var versionString = await _connection.QueryFirstOrDefaultAsync<string>(
+                "SELECT sqlite_version()").ConfigureAwait(false);
+
+            if (string.IsNullOrWhiteSpace(versionString))
+            {
+                _logger.LogWarning("Health check failed: Could not retrieve SQLite version");
+                return false;
+            }
+
+            if (!Version.TryParse(versionString, out var version))
+            {
+                _logger.LogWarning("Health check failed: Invalid SQLite version format: {Version}", versionString);
+                return false;
+            }
+
+            var minVersion = new Version(3, 45, 0);
+            if (version < minVersion)
+            {
+                _logger.LogWarning(
+                    "Health check failed: SQLite version {Version} does not support JSONB (requires {MinVersion}+)",
+                    version, minVersion);
+                return false;
+            }
+
+            // Test basic query execution
+            await _connection.QueryFirstOrDefaultAsync<int>("SELECT 1").ConfigureAwait(false);
+
+            _logger.LogDebug("Health check passed: SQLite version {Version}", version);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Health check failed with exception");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Disposes the document store and, if owned, the underlying connection.
     /// Performs a WAL checkpoint if the connection is owned and in WAL mode to ensure data durability.
     /// </summary>

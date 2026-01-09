@@ -196,6 +196,52 @@ public class DocumentStoreIntegrationTests : IDisposable
         Assert.Null(p2);
     }
 
+    [Fact]
+    public async Task IsHealthyAsync_WithValidConnection_ReturnsTrue()
+    {
+        // Act
+        var isHealthy = await _store.IsHealthyAsync();
+
+        // Assert
+        Assert.True(isHealthy);
+    }
+
+    [Fact]
+    public async Task IsHealthyAsync_ValidatesSqliteVersion()
+    {
+        // Act
+        var isHealthy = await _store.IsHealthyAsync();
+
+        // Assert
+        Assert.True(isHealthy);
+
+        // Verify SQLite version is 3.45+
+        var version = await _connection.QueryFirstOrDefaultAsync<string>("SELECT sqlite_version()");
+        Assert.NotNull(version);
+        Assert.True(Version.TryParse(version, out var sqliteVersion));
+        Assert.True(sqliteVersion >= new Version(3, 45, 0), 
+            $"SQLite version {sqliteVersion} should be 3.45.0 or higher for JSONB support");
+    }
+
+    [Fact]
+    public async Task IsHealthyAsync_CanExecuteBasicQuery()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("test", new Person { Name = "Test" });
+
+        // Act
+        var isHealthy = await _store.IsHealthyAsync();
+
+        // Assert
+        Assert.True(isHealthy);
+
+        // Verify we can still perform operations after health check
+        var person = await _store.GetAsync<Person>("test");
+        Assert.NotNull(person);
+        Assert.Equal("Test", person.Name);
+    }
+
     private class Person
     {
         public string Name { get; set; } = string.Empty;

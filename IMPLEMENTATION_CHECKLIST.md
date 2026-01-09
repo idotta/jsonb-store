@@ -99,9 +99,9 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: Async factory methods (`CreateAsync`, `CreateConnectionAsync`)
   - [x] **NEW**: Connection configuration via `ConfigureConnection` and `ConfigureConnectionAsync`
 
-- [ ] **Health checks**
-  - [ ] `IsHealthyAsync()` method for liveness probes
-  - [ ] SQLite version validation (require 3.45+ for JSONB)
+- [x] **Health checks**
+  - [x] `IsHealthyAsync()` method for liveness probes
+  - [x] SQLite version validation (require 3.45+ for JSONB)
 
 ---
 

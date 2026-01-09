@@ -65,6 +65,14 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     Task ExecuteInTransactionAsync(Func<Task> action);
 
     /// <summary>
+    /// Checks if the document store is healthy and ready for operations.
+    /// Verifies the connection is open and validates SQLite version supports JSONB (3.45+).
+    /// Useful for liveness probes in containerized environments and health monitoring.
+    /// </summary>
+    /// <returns>True if the store is healthy, false otherwise</returns>
+    Task<bool> IsHealthyAsync();
+
+    /// <summary>
     /// Gets the underlying SQLite connection for advanced operations and raw SQL access.
     /// This enables the hybrid experience where users can use both document storage
     /// and traditional relational database features.

@@ -143,6 +143,76 @@ public class DocumentStoreTests
         }
     }
 
+    [Fact]
+    public async Task IsHealthyAsync_WithOpenConnection_ReturnsTrue()
+    {
+        // Arrange
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var connectionFactory = new DefaultConnectionFactory();
+        using var connection = connectionFactory.CreateConnection(options);
+        var store = new DocumentStore(connection, ownsConnection: false);
+
+        // Act
+        var isHealthy = await store.IsHealthyAsync();
+
+        // Assert
+        Assert.True(isHealthy);
+
+        // Cleanup
+        if (File.Exists(_testDbPath))
+        {
+            try { File.Delete(_testDbPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task IsHealthyAsync_WithClosedConnection_ReturnsFalse()
+    {
+        // Arrange
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var connectionFactory = new DefaultConnectionFactory();
+        var connection = connectionFactory.CreateConnection(options);
+        connection.Close();
+        var store = new DocumentStore(connection, ownsConnection: false);
+
+        // Act
+        var isHealthy = await store.IsHealthyAsync();
+
+        // Assert
+        Assert.False(isHealthy);
+
+        // Cleanup
+        connection.Dispose();
+        if (File.Exists(_testDbPath))
+        {
+            try { File.Delete(_testDbPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task IsHealthyAsync_OnDisposedStore_ReturnsFalse()
+    {
+        // Arrange
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var connectionFactory = new DefaultConnectionFactory();
+        var connection = connectionFactory.CreateConnection(options);
+        var store = new DocumentStore(connection, ownsConnection: false);
+
+        // Act
+        await store.DisposeAsync();
+        var isHealthy = await store.IsHealthyAsync();
+
+        // Assert
+        Assert.False(isHealthy);
+
+        // Cleanup
+        connection.Dispose();
+        if (File.Exists(_testDbPath))
+        {
+            try { File.Delete(_testDbPath); } catch { }
+        }
+    }
+
     private class TestPerson
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
