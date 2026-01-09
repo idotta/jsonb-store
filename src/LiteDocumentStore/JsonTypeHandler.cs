@@ -9,7 +9,7 @@ namespace LiteDocumentStore;
 /// to/from SQLite TEXT or BLOB columns.
 /// </summary>
 /// <typeparam name="T">The type of object to serialize/deserialize</typeparam>
-public class JsonTypeHandler<T> : SqlMapper.TypeHandler<T>
+public sealed class JsonTypeHandler<T> : SqlMapper.TypeHandler<T>
 {
     private readonly JsonSerializerOptions _options;
 

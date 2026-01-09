@@ -7,7 +7,7 @@ namespace LiteDocumentStore;
 /// Default implementation of <see cref="IDocumentStoreFactory"/>.
 /// Creates <see cref="DocumentStore"/> instances with all dependencies composed.
 /// </summary>
-public sealed class DocumentStoreFactory : IDocumentStoreFactory
+internal sealed class DocumentStoreFactory : IDocumentStoreFactory
 {
     private readonly IConnectionFactory _connectionFactory;
     private readonly IJsonSerializer _jsonSerializer;

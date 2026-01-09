@@ -3,7 +3,7 @@ namespace LiteDocumentStore;
 /// <summary>
 /// Builder for creating DocumentStoreOptions with a fluent API.
 /// </summary>
-public class DocumentStoreOptionsBuilder
+public sealed class DocumentStoreOptionsBuilder
 {
     private readonly DocumentStoreOptions _options;
 

@@ -3,7 +3,7 @@ namespace LiteDocumentStore;
 /// <summary>
 /// Default implementation of <see cref="ITableNamingConvention"/> that uses the type name as-is.
 /// </summary>
-public class DefaultTableNamingConvention : ITableNamingConvention
+internal sealed class DefaultTableNamingConvention : ITableNamingConvention
 {
     /// <inheritdoc/>
     public string GetTableName<T>()

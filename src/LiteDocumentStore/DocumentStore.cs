@@ -11,7 +11,7 @@ namespace LiteDocumentStore;
 /// Uses Dapper for minimal mapping overhead and supports JSON document storage using JSONB format (SQLite 3.45+).
 /// Can optionally own and manage the lifecycle of its SqliteConnection.
 /// </summary>
-public sealed class DocumentStore : IDocumentStore
+internal sealed class DocumentStore : IDocumentStore
 {
     private readonly SqliteConnection _connection;
     private readonly IJsonSerializer _jsonSerializer;

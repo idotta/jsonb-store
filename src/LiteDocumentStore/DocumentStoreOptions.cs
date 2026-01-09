@@ -3,7 +3,7 @@ namespace LiteDocumentStore;
 /// <summary>
 /// Configuration options for DocumentStore repository behavior and SQLite performance settings.
 /// </summary>
-public class DocumentStoreOptions
+public sealed class DocumentStoreOptions
 {
     /// <summary>
     /// Gets or sets the database file path or connection string.

@@ -5,7 +5,7 @@ namespace LiteDocumentStore;
 /// <summary>
 /// Default implementation of <see cref="IJsonSerializer"/> using System.Text.Json.
 /// </summary>
-public class SystemTextJsonSerializer : IJsonSerializer
+internal sealed class SystemTextJsonSerializer : IJsonSerializer
 {
     private readonly JsonSerializerOptions _options;
 

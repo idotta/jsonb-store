@@ -8,7 +8,7 @@ namespace LiteDocumentStore;
 /// A single instance can create connections for multiple databases by passing
 /// different options to each method.
 /// </summary>
-public sealed class DefaultConnectionFactory : IConnectionFactory
+internal sealed class DefaultConnectionFactory : IConnectionFactory
 {
     /// <summary>
     /// Initializes a new instance of DefaultConnectionFactory.
