@@ -7,7 +7,7 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
 ## 1. Core Architecture & Abstractions
 
 - [x] **Define interfaces for extensibility**
-  - [x] `IRepository<T>` - Generic repository contract
+  - [x] `IDocumentStore` - Generic document store contract (formerly `IRepository`)
   - [x] `IJsonSerializer` - Pluggable JSON serialization (System.Text.Json, Newtonsoft, etc.)
   - [x] `IConnectionFactory` - Connection lifecycle management
   - [x] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
@@ -20,19 +20,20 @@ A comprehensive checklist for building a production-ready hybrid SQLite library 
 
 - [x] **Dependency Injection support**
   - [x] `IServiceCollection.AddJsonbStore()` extension method
+  - [x] Registers `SqliteConnection` for hybrid usage
   - [x] Scoped vs Singleton connection strategies
-  - [x] Named/keyed repository registration for multiple databases (keyed services for .NET 8+)
+  - [x] Named/keyed store registration for multiple databases (keyed services for .NET 8+)
 
-- [ ] **Refactor existing `Repository.cs`**
-  - [ ] Implement `IRepository<T>` interface
-  - [ ] Replace direct `System.Text.Json` calls with `IJsonSerializer`
-  - [ ] Replace hardcoded `GetTableName<T>()` with `ITableNamingConvention`
-  - [ ] Accept `JsonbStoreOptions` in constructor (with sensible defaults)
-  - [ ] Use `IConnectionFactory` for connection management
-  - [ ] Add input validation (null/empty ID checks, etc.)
-  - [ ] Add `ILogger` integration for diagnostics
-  - [ ] Extract SQL generation to internal helper (for testability)
-  - [ ] Consider renaming to `JsonbRepository` or `DocumentRepository` for clarity
+- [x] **Refactor existing `Repository.cs`**
+  - [x] Rename to `DocumentStore` supporting `IDocumentStore`
+  - [x] Decouple connection lifecycle (doesn't own connection)
+  - [x] Replace direct `System.Text.Json` calls with `IJsonSerializer`
+  - [x] Replace hardcoded `GetTableName<T>()` with `ITableNamingConvention`
+  - [x] Accept `SqliteConnection` in constructor
+  - [x] Use `IConnectionFactory` for creation (via DI)
+  - [x] Add input validation (null/empty ID checks, etc.)
+  - [x] Add `ILogger` integration for diagnostics
+  - [x] Extract SQL generation to internal helper (for testability)
 
 ---
 

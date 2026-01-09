@@ -4,11 +4,11 @@ using System.Data;
 namespace JsonbStore;
 
 /// <summary>
-/// Defines the contract for a repository that provides JSON document storage
+/// Defines the contract for a document store that provides JSON document storage
 /// with full relational database capabilities. Supports multiple entity types
 /// through generic methods.
 /// </summary>
-public interface IRepository : IAsyncDisposable, IDisposable
+public interface IDocumentStore
 {
     /// <summary>
     /// Creates a table for storing JSON objects with a generic schema using JSONB format.
@@ -19,7 +19,7 @@ public interface IRepository : IAsyncDisposable, IDisposable
     Task CreateTableAsync<T>();
 
     /// <summary>
-    /// Inserts or updates a JSON object in the repository using JSONB format.
+    /// Inserts or updates a JSON object in the document store using JSONB format.
     /// </summary>
     /// <typeparam name="T">Type of the object to store (also used as table name)</typeparam>
     /// <param name="id">Unique identifier for the object</param>
@@ -28,7 +28,7 @@ public interface IRepository : IAsyncDisposable, IDisposable
     Task UpsertAsync<T>(string id, T data);
 
     /// <summary>
-    /// Retrieves a JSON object by its ID from the repository.
+    /// Retrieves a JSON object by its ID from the document store.
     /// </summary>
     /// <typeparam name="T">Type of the object to retrieve (also used as table name)</typeparam>
     /// <param name="id">Unique identifier of the object</param>
@@ -36,14 +36,14 @@ public interface IRepository : IAsyncDisposable, IDisposable
     Task<T?> GetAsync<T>(string id);
 
     /// <summary>
-    /// Retrieves all JSON objects from the repository.
+    /// Retrieves all JSON objects from the document store.
     /// </summary>
     /// <typeparam name="T">Type of the objects to retrieve (also used as table name)</typeparam>
     /// <returns>An enumerable of deserialized objects</returns>
     Task<IEnumerable<T>> GetAllAsync<T>();
 
     /// <summary>
-    /// Deletes a JSON object by its ID from the repository.
+    /// Deletes a JSON object by its ID from the document store.
     /// </summary>
     /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
     /// <param name="id">Unique identifier of the object to delete</param>

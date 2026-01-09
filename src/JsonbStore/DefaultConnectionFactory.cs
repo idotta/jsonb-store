@@ -23,12 +23,63 @@ public class DefaultConnectionFactory : IConnectionFactory
     public bool OwnsConnection => true;
 
     /// <inheritdoc/>
+    public SqliteConnection CreateConnection()
+    {
+        var connection = new SqliteConnection(_options.ConnectionString);
+        connection.Open();
+        ConfigureConnection(connection);
+        return connection;
+    }
+
+    /// <inheritdoc/>
     public async Task<SqliteConnection> CreateConnectionAsync()
     {
         var connection = new SqliteConnection(_options.ConnectionString);
         await connection.OpenAsync();
         await ConfigureConnectionAsync(connection);
         return connection;
+    }
+
+    /// <inheritdoc/>
+    public void ConfigureConnection(SqliteConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+
+        if (connection.State != ConnectionState.Open)
+        {
+            connection.Open();
+        }
+
+        // Configure WAL mode
+        if (_options.EnableWalMode)
+        {
+            connection.Execute("PRAGMA journal_mode = WAL;");
+        }
+
+        // Configure synchronous mode
+        var syncMode = GetSynchronousModeString(_options.SynchronousMode);
+        connection.Execute($"PRAGMA synchronous = {syncMode};");
+
+        // Configure page size (must be set before any tables are created)
+        connection.Execute($"PRAGMA page_size = {_options.PageSize};");
+
+        // Configure cache size
+        connection.Execute($"PRAGMA cache_size = {_options.CacheSize};");
+
+        // Configure busy timeout
+        connection.Execute($"PRAGMA busy_timeout = {_options.BusyTimeoutMs};");
+
+        // Configure foreign keys
+        if (_options.EnableForeignKeys)
+        {
+            connection.Execute("PRAGMA foreign_keys = ON;");
+        }
+
+        // Execute additional pragmas
+        foreach (var pragma in _options.AdditionalPragmas)
+        {
+            connection.Execute(pragma);
+        }
     }
 
     /// <inheritdoc/>
@@ -48,13 +99,7 @@ public class DefaultConnectionFactory : IConnectionFactory
         }
 
         // Configure synchronous mode
-        var syncMode = _options.SynchronousMode switch
-        {
-            SynchronousMode.Off => "OFF",
-            SynchronousMode.Normal => "NORMAL",
-            SynchronousMode.Full => "FULL",
-            _ => "NORMAL"
-        };
+        var syncMode = GetSynchronousModeString(_options.SynchronousMode);
         await connection.ExecuteAsync($"PRAGMA synchronous = {syncMode};");
 
         // Configure page size (must be set before any tables are created)
@@ -78,6 +123,17 @@ public class DefaultConnectionFactory : IConnectionFactory
             await connection.ExecuteAsync(pragma);
         }
     }
+
+    private static string GetSynchronousModeString(SynchronousMode mode)
+    {
+        return mode switch
+        {
+            SynchronousMode.Off => "OFF",
+            SynchronousMode.Normal => "NORMAL",
+            SynchronousMode.Full => "FULL",
+            _ => "NORMAL"
+        };
+    }
 }
 
 /// <summary>
@@ -85,6 +141,13 @@ public class DefaultConnectionFactory : IConnectionFactory
 /// </summary>
 internal static class SqliteConnectionExtensions
 {
+    public static void Execute(this SqliteConnection connection, string commandText)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = commandText;
+        command.ExecuteNonQuery();
+    }
+
     public static async Task ExecuteAsync(this SqliteConnection connection, string commandText)
     {
         using var command = connection.CreateCommand();
