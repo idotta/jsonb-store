@@ -45,7 +45,7 @@ public class DocumentStoreTests
 
         using (var connection = connectionFactory.CreateConnection(options))
         {
-             var store = new DocumentStore(connection);
+            var store = new DocumentStore(connection);
 
             // Act - create table should use type name
             await store.CreateTableAsync<TestPerson>();

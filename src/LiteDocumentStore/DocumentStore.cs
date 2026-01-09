@@ -1,7 +1,3 @@
-using Dapper;
-using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System.Data;
 
 namespace LiteDocumentStore;
@@ -238,7 +234,7 @@ public sealed class DocumentStore : IDocumentStore
         // However, standard ADO.NET SqliteConnection.BeginTransaction() will fail if currently in a transaction.
         // For now, naive implementation: try to begin.
         // Ideally we should support nested transactions or check, but simpler first.
-        
+
         using var transaction = _connection.BeginTransaction();
         try
         {

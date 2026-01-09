@@ -1,7 +1,3 @@
-using Dapper;
-using Microsoft.Data.Sqlite;
-using Xunit;
-
 namespace LiteDocumentStore.IntegrationTests;
 
 public class DocumentStoreIntegrationTests : IDisposable
@@ -15,7 +11,7 @@ public class DocumentStoreIntegrationTests : IDisposable
         _testDbPath = Path.Combine(Path.GetTempPath(), $"test_integration_{Guid.NewGuid()}.db");
         var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
         var connectionFactory = new DefaultConnectionFactory();
-        
+
         // Manual connection management
         _connection = connectionFactory.CreateConnection(options);
         _store = new DocumentStore(_connection);
@@ -24,12 +20,12 @@ public class DocumentStoreIntegrationTests : IDisposable
     public void Dispose()
     {
         _connection.Dispose();
-        
+
         // Force garbage collection to ensure connection is fully closed
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        
+
         if (File.Exists(_testDbPath))
         {
             try
