@@ -79,7 +79,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Build project
-      run: dotnet build jsonb-store.slnx --configuration Release
+      run: dotnet build LiteDocumentStore.slnx --configuration Release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4

@@ -16,13 +16,13 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore dependencies
-        run: dotnet restore src/jsonb-store.slnx
+        run: dotnet restore src/LiteDocumentStore.slnx
 
       - name: Build
-        run: dotnet build src/jsonb-store.slnx --no-restore --configuration Release
+        run: dotnet build src/LiteDocumentStore.slnx --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test src/jsonb-store.slnx --no-build --configuration Release
+        run: dotnet test src/LiteDocumentStore.slnx --no-build --configuration Release
 
       - name: Set Version
         id: get_version
