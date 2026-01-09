@@ -53,18 +53,6 @@ public sealed class DocumentStoreOptions
     public bool EnableForeignKeys { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to use pooled connections.
-    /// Default is false (single long-lived connection).
-    /// </summary>
-    public bool UseConnectionPooling { get; set; } = false;
-
-    /// <summary>
-    /// Gets or sets the maximum number of connections in the pool (if pooling is enabled).
-    /// Default is 10.
-    /// </summary>
-    public int MaxPoolSize { get; set; } = 10;
-
-    /// <summary>
     /// Gets or sets the default table naming convention.
     /// If null, uses the simple type name as table name.
     /// </summary>
@@ -178,8 +166,6 @@ public sealed class DocumentStoreOptions
             CacheSize = CacheSize,
             BusyTimeoutMs = BusyTimeoutMs,
             EnableForeignKeys = EnableForeignKeys,
-            UseConnectionPooling = UseConnectionPooling,
-            MaxPoolSize = MaxPoolSize,
             TableNamingConvention = TableNamingConvention,
             JsonSerializer = JsonSerializer,
             AdditionalPragmas = [.. AdditionalPragmas]

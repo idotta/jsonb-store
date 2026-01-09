@@ -51,7 +51,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: `DocumentStoreOptionsBuilder` with fluent API
   - [x] **NEW**: Factory methods for in-memory, shared in-memory, and file-based databases
   - [x] **NEW**: Support for additional pragmas and custom serializer/naming convention per-store
-  - [x] **NEW**: Connection pooling configuration (UseConnectionPooling, MaxPoolSize)
   - [x] **NEW**: Foreign keys and busy timeout configuration
 
 - [x] **Dependency Injection support**
@@ -84,9 +83,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 - [x] **Connection pooling strategy**
   - [x] Single long-lived connection mode (current)
-  - [x] **NEW**: Configuration options for pooling (UseConnectionPooling, MaxPoolSize)
-  - [ ] Pool mode with `SqliteConnectionPool` wrapper (planned, not yet implemented)
-  - [ ] Configurable pool size and timeout
 
 - [x] **Proper resource management**
   - [x] `IAsyncDisposable` pattern (exists, verified correct)

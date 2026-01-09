@@ -159,18 +159,6 @@ public sealed class DocumentStoreOptionsBuilder
     }
 
     /// <summary>
-    /// Enables connection pooling with optional pool size configuration.
-    /// </summary>
-    /// <param name="maxPoolSize">Maximum number of connections in the pool (default: 10)</param>
-    /// <returns>This builder for method chaining</returns>
-    public DocumentStoreOptionsBuilder WithConnectionPooling(int maxPoolSize = 10)
-    {
-        _options.UseConnectionPooling = true;
-        _options.MaxPoolSize = maxPoolSize;
-        return this;
-    }
-
-    /// <summary>
     /// Sets the table naming convention.
     /// </summary>
     /// <param name="convention">The table naming convention to use</param>
