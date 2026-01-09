@@ -104,14 +104,19 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        dotnet test tests/LiteDocumentStore.UnitTests/LiteDocumentStore.UnitTests.csproj --configuration Release \
+        dotnet test src/tests/LiteDocumentStore.UnitTests/LiteDocumentStore.UnitTests.csproj --configuration Release \
           --collect:"XPlat Code Coverage" \
           --results-directory ./coverage \
           --logger "trx;LogFileName=unit-test-results.trx"
-        dotnet test tests/LiteDocumentStore.IntegrationTests/LiteDocumentStore.IntegrationTests.csproj --configuration Release \
+        dotnet test src/tests/LiteDocumentStore.IntegrationTests/LiteDocumentStore.IntegrationTests.csproj --configuration Release \
           --collect:"XPlat Code Coverage" \
           --results-directory ./coverage \
           --logger "trx;LogFileName=integration-test-results.trx"
+
+    - name: List coverage files (debug)
+      run: |
+        echo "Contents of coverage directory:"
+        ls -R ./coverage || echo "No coverage directory found"
 
     - name: Generate coverage report
       uses: danielpalme/ReportGenerator-GitHub-Action@5.5.1
