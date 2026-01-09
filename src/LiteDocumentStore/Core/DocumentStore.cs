@@ -60,6 +60,20 @@ internal sealed class DocumentStore : IDocumentStore
     }
 
     /// <summary>
+    /// Ensures the connection is in an open state before performing database operations.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the connection is not open.</exception>
+    private void EnsureConnectionOpen()
+    {
+        if (_connection.State != ConnectionState.Open)
+        {
+            throw new InvalidOperationException(
+                $"Connection is not open. Current state: {_connection.State}. " +
+                "Please ensure the connection is opened before using the DocumentStore.");
+        }
+    }
+
+    /// <summary>
     /// Creates a table for storing JSON objects with a generic schema using JSONB format.
     /// The table name will be the name of the type T.
     /// </summary>
@@ -67,6 +81,7 @@ internal sealed class DocumentStore : IDocumentStore
     public async Task CreateTableAsync<T>()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
 
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateCreateTableSql(tableName);
@@ -85,6 +100,7 @@ internal sealed class DocumentStore : IDocumentStore
     public async Task UpsertAsync<T>(string id, T data)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
 
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -117,6 +133,7 @@ internal sealed class DocumentStore : IDocumentStore
     public async Task<T?> GetAsync<T>(string id)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
 
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -149,6 +166,7 @@ internal sealed class DocumentStore : IDocumentStore
     public async Task<IEnumerable<T>> GetAllAsync<T>()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
 
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateGetAllSql(tableName);
@@ -180,6 +198,7 @@ internal sealed class DocumentStore : IDocumentStore
     public async Task<bool> DeleteAsync<T>(string id)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
 
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -230,6 +249,7 @@ internal sealed class DocumentStore : IDocumentStore
     private async Task ExecuteInTransactionCoreAsync(Func<IDbTransaction, Task> action)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
 
         // Use existing transaction if any?
         // _connection.BeginTransaction() requires the connection to be open.
@@ -254,6 +274,7 @@ internal sealed class DocumentStore : IDocumentStore
 
     /// <summary>
     /// Disposes the document store and, if owned, the underlying connection.
+    /// Performs a WAL checkpoint if the connection is owned and in WAL mode to ensure data durability.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
@@ -266,6 +287,7 @@ internal sealed class DocumentStore : IDocumentStore
 
         if (_ownsConnection)
         {
+            await PerformWalCheckpointAsync().ConfigureAwait(false);
             _logger.LogDebug("Disposing owned connection");
             await _connection.DisposeAsync().ConfigureAwait(false);
         }
@@ -273,6 +295,7 @@ internal sealed class DocumentStore : IDocumentStore
 
     /// <summary>
     /// Disposes the document store and, if owned, the underlying connection.
+    /// Performs a WAL checkpoint if the connection is owned and in WAL mode to ensure data durability.
     /// </summary>
     public void Dispose()
     {
@@ -285,8 +308,69 @@ internal sealed class DocumentStore : IDocumentStore
 
         if (_ownsConnection)
         {
+            PerformWalCheckpoint();
             _logger.LogDebug("Disposing owned connection");
             _connection.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Performs a WAL checkpoint to flush Write-Ahead Log to the database file for durability.
+    /// Only executes if the connection is in a valid state and journal mode is WAL.
+    /// </summary>
+    private async Task PerformWalCheckpointAsync()
+    {
+        try
+        {
+            if (_connection.State == ConnectionState.Open)
+            {
+                // Check if we're in WAL mode
+                var journalMode = await _connection.QueryFirstOrDefaultAsync<string>(
+                    "PRAGMA journal_mode").ConfigureAwait(false);
+
+                if (string.Equals(journalMode, "wal", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Executing WAL checkpoint before disposal");
+                    // PRAGMA wal_checkpoint(TRUNCATE) ensures all WAL frames are checkpointed and the WAL file is truncated
+                    await _connection.ExecuteAsync("PRAGMA wal_checkpoint(TRUNCATE)")
+                        .ConfigureAwait(false);
+                    _logger.LogInformation("WAL checkpoint completed successfully");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't throw during disposal - log and continue
+            _logger.LogWarning(ex, "Failed to perform WAL checkpoint during disposal");
+        }
+    }
+
+    /// <summary>
+    /// Performs a WAL checkpoint to flush Write-Ahead Log to the database file for durability (synchronous version).
+    /// Only executes if the connection is in a valid state and journal mode is WAL.
+    /// </summary>
+    private void PerformWalCheckpoint()
+    {
+        try
+        {
+            if (_connection.State == ConnectionState.Open)
+            {
+                // Check if we're in WAL mode
+                var journalMode = _connection.QueryFirstOrDefault<string>("PRAGMA journal_mode");
+
+                if (string.Equals(journalMode, "wal", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Executing WAL checkpoint before disposal");
+                    // PRAGMA wal_checkpoint(TRUNCATE) ensures all WAL frames are checkpointed and the WAL file is truncated
+                    _connection.Execute("PRAGMA wal_checkpoint(TRUNCATE)");
+                    _logger.LogInformation("WAL checkpoint completed successfully");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't throw during disposal - log and continue
+            _logger.LogWarning(ex, "Failed to perform WAL checkpoint during disposal");
         }
     }
 }

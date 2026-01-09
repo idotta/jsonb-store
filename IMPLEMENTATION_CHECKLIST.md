@@ -89,8 +89,8 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] `IDisposable` pattern for synchronous disposal
   - [x] **NEW**: Conditional connection disposal based on ownership
   - [x] **NEW**: Connection state validation in property accessor
-  - [ ] Connection state validation before operations
-  - [ ] Graceful shutdown with WAL checkpoint
+  - [x] Connection state validation before operations
+  - [x] Graceful shutdown with WAL checkpoint
 
 - [x] **Factory pattern implementation**
   - [x] **NEW**: `IDocumentStoreFactory` interface
