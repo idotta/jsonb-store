@@ -38,7 +38,7 @@ public class MigrationTests
     public void Migration_Constructor_WithNullName_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var ex = Assert.Throws<ArgumentNullException>(() => 
+        var ex = Assert.Throws<ArgumentNullException>(() =>
             new Migration(1, null!, "SELECT 1", "SELECT 2"));
 
         Assert.Equal("name", ex.ParamName);
@@ -48,7 +48,7 @@ public class MigrationTests
     public void Migration_Constructor_WithNullUpSql_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var ex = Assert.Throws<ArgumentNullException>(() => 
+        var ex = Assert.Throws<ArgumentNullException>(() =>
             new Migration(1, "Test", null!, "SELECT 2"));
 
         Assert.Equal("upSql", ex.ParamName);
@@ -58,7 +58,7 @@ public class MigrationTests
     public void Migration_Constructor_WithNullDownSql_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var ex = Assert.Throws<ArgumentNullException>(() => 
+        var ex = Assert.Throws<ArgumentNullException>(() =>
             new Migration(1, "Test", "SELECT 1", null!));
 
         Assert.Equal("downSql", ex.ParamName);

@@ -13,7 +13,7 @@ public class SchemaIntrospectionIntegrationTests : IAsyncLifetime
     {
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
-        
+
         _store = new DocumentStore(_connection, ownsConnection: false);
         _introspector = new SchemaIntrospector(_connection);
     }
@@ -84,7 +84,7 @@ public class SchemaIntrospectionIntegrationTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(4, columns.Count); // id, data, created_at, updated_at
-        
+
         var idColumn = columns.FirstOrDefault(c => c.Name == "id");
         Assert.NotNull(idColumn);
         Assert.Equal("TEXT", idColumn.Type);

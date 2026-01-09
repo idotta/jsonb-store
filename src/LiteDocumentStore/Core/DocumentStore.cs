@@ -289,7 +289,7 @@ internal sealed class DocumentStore : IDocumentStore
         var pathString = ExtractJsonPath(jsonPath);
         var finalIndexName = indexName ?? GenerateIndexName(tableName, pathString);
 
-        _logger.LogDebug("Creating index {IndexName} on table {TableName} for path {JsonPath}", 
+        _logger.LogDebug("Creating index {IndexName} on table {TableName} for path {JsonPath}",
             finalIndexName, tableName, pathString);
 
         // Check if index already exists

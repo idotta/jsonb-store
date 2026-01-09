@@ -25,7 +25,7 @@ public sealed class MigrationRunner
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _logger = logger ?? NullLogger<MigrationRunner>.Instance;
-        
+
         // Register DateTimeOffset handler for Dapper if not already registered
         SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
     }
@@ -74,7 +74,7 @@ public sealed class MigrationRunner
 
         var sql = $@"SELECT COALESCE(MAX(version), 0) FROM [{MigrationTableName}]";
         var version = await _connection.ExecuteScalarAsync<long>(sql).ConfigureAwait(false);
-        
+
         _logger.LogDebug("Current migration version: {Version}", version);
         return version;
     }
@@ -87,14 +87,14 @@ public sealed class MigrationRunner
     public async Task<bool> ApplyMigrationAsync(IMigration migration)
     {
         ArgumentNullException.ThrowIfNull(migration);
-        
+
         await EnsureMigrationTableExistsAsync().ConfigureAwait(false);
 
         var currentVersion = await GetCurrentVersionAsync().ConfigureAwait(false);
-        
+
         if (migration.Version <= currentVersion)
         {
-            _logger.LogDebug("Migration {Version} ({Name}) already applied, skipping", 
+            _logger.LogDebug("Migration {Version} ({Name}) already applied, skipping",
                 migration.Version, migration.Name);
             return false;
         }
@@ -111,7 +111,7 @@ public sealed class MigrationRunner
             var sql = $@"
                 INSERT INTO [{MigrationTableName}] (version, name, applied_at) 
                 VALUES (@Version, @Name, @AppliedAt)";
-            
+
             await _connection.ExecuteAsync(sql, new
             {
                 Version = migration.Version,
@@ -126,7 +126,7 @@ public sealed class MigrationRunner
         catch (Exception ex)
         {
             transaction.Rollback();
-            _logger.LogError(ex, "Failed to apply migration {Version}: {Name}", 
+            _logger.LogError(ex, "Failed to apply migration {Version}: {Name}",
                 migration.Version, migration.Name);
             throw;
         }
@@ -175,7 +175,7 @@ public sealed class MigrationRunner
 
         if (!isApplied)
         {
-            _logger.LogDebug("Migration {Version} ({Name}) not applied, nothing to rollback", 
+            _logger.LogDebug("Migration {Version} ({Name}) not applied, nothing to rollback",
                 migration.Version, migration.Name);
             return false;
         }
@@ -200,7 +200,7 @@ public sealed class MigrationRunner
         catch (Exception ex)
         {
             transaction.Rollback();
-            _logger.LogError(ex, "Failed to rollback migration {Version}: {Name}", 
+            _logger.LogError(ex, "Failed to rollback migration {Version}: {Name}",
                 migration.Version, migration.Name);
             throw;
         }
@@ -235,7 +235,7 @@ public sealed class MigrationRunner
         {
             if (!migrationDict.TryGetValue(record.Version, out var migration))
             {
-                _logger.LogWarning("Migration {Version} is applied but definition not found, skipping rollback", 
+                _logger.LogWarning("Migration {Version} is applied but definition not found, skipping rollback",
                     record.Version);
                 continue;
             }
@@ -247,7 +247,7 @@ public sealed class MigrationRunner
             }
         }
 
-        _logger.LogInformation("Rolled back {Count} migrations to version {Version}", 
+        _logger.LogInformation("Rolled back {Count} migrations to version {Version}",
             rolledBackCount, targetVersion);
         return rolledBackCount;
     }

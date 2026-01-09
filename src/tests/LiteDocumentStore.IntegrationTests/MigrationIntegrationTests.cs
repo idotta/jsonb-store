@@ -293,7 +293,7 @@ public class MigrationIntegrationTests : IAsyncLifetime
         // Assert
         var appliedMigrations = (await _runner.GetAppliedMigrationsAsync()).ToList();
         Assert.Single(appliedMigrations);
-        
+
         var record = appliedMigrations[0];
         Assert.True(record.AppliedAt >= before);
         Assert.True(record.AppliedAt <= after);

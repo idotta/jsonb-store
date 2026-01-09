@@ -53,7 +53,7 @@ public sealed class SchemaIntrospector
 
         var count = await _connection.ExecuteScalarAsync<int>(sql, new { TableName = tableName })
             .ConfigureAwait(false);
-        
+
         return count > 0;
     }
 
@@ -121,7 +121,7 @@ public sealed class SchemaIntrospector
 
         var count = await _connection.ExecuteScalarAsync<int>(sql, new { IndexName = indexName })
             .ConfigureAwait(false);
-        
+
         return count > 0;
     }
 

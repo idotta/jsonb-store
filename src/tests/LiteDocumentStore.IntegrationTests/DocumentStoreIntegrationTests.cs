@@ -311,10 +311,10 @@ public class DocumentStoreIntegrationTests : IDisposable
 
         // Act
         await _store.CreateCompositeIndexAsync<Person>(
-            new System.Linq.Expressions.Expression<Func<Person, object>>[] 
-            { 
-                p => p.Name, 
-                p => p.Age 
+            new System.Linq.Expressions.Expression<Func<Person, object>>[]
+            {
+                p => p.Name,
+                p => p.Age
             },
             "idx_person_name_age");
 
@@ -332,10 +332,10 @@ public class DocumentStoreIntegrationTests : IDisposable
 
         // Act
         await _store.CreateCompositeIndexAsync<Person>(
-            new System.Linq.Expressions.Expression<Func<Person, object>>[] 
-            { 
-                p => p.Name, 
-                p => p.Email 
+            new System.Linq.Expressions.Expression<Func<Person, object>>[]
+            {
+                p => p.Name,
+                p => p.Email
             });
 
         // Assert - check that a composite index was created
@@ -350,19 +350,19 @@ public class DocumentStoreIntegrationTests : IDisposable
         // Arrange
         await _store.CreateTableAsync<Person>();
         await _store.CreateCompositeIndexAsync<Person>(
-            new System.Linq.Expressions.Expression<Func<Person, object>>[] 
-            { 
-                p => p.Name, 
-                p => p.Age 
+            new System.Linq.Expressions.Expression<Func<Person, object>>[]
+            {
+                p => p.Name,
+                p => p.Age
             },
             "idx_person_name_age");
 
         // Act - creating the same index again should not throw
         await _store.CreateCompositeIndexAsync<Person>(
-            new System.Linq.Expressions.Expression<Func<Person, object>>[] 
-            { 
-                p => p.Name, 
-                p => p.Age 
+            new System.Linq.Expressions.Expression<Func<Person, object>>[]
+            {
+                p => p.Name,
+                p => p.Age
             },
             "idx_person_name_age");
 
@@ -377,15 +377,15 @@ public class DocumentStoreIntegrationTests : IDisposable
     {
         // Arrange
         await _store.CreateTableAsync<Person>();
-        
+
         // Insert test data
         for (int i = 0; i < 100; i++)
         {
-            await _store.UpsertAsync($"person{i}", new Person 
-            { 
-                Name = $"Person {i}", 
+            await _store.UpsertAsync($"person{i}", new Person
+            {
+                Name = $"Person {i}",
                 Age = 20 + (i % 50),
-                Email = $"person{i}@example.com" 
+                Email = $"person{i}@example.com"
             });
         }
 
@@ -395,7 +395,7 @@ public class DocumentStoreIntegrationTests : IDisposable
         // Assert - Verify the index exists and can be used
         var queryPlan = await _connection.QueryAsync<dynamic>(
             "EXPLAIN QUERY PLAN SELECT json(data) FROM Person WHERE json_extract(data, '$.email') = 'person50@example.com'");
-        
+
         // The query plan should mention the index
         var planText = string.Join(" ", queryPlan.Select(p => p.detail));
         Assert.Contains("idx_", planText.ToLower());
