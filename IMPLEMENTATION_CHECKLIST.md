@@ -131,8 +131,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 - [x] **Transaction Support**
   - [x] **NEW**: `ExecuteInTransactionAsync` with two overloads (with/without IDbTransaction)
   - [x] **NEW**: Automatic commit on success, rollback on exception
-  - [ ] Return affected rows count or the entity itself
-  - [ ] Support partial updates (PATCH semantics with `json_patch()`)
+  - [x] Return affected rows count from `UpsertAsync`
 
 - [ ] **Improved Upsert**
   - [ ] Return affected rows count or the entity itself

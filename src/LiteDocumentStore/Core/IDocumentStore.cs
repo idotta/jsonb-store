@@ -24,8 +24,8 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     /// <typeparam name="T">Type of the object to store (also used as table name)</typeparam>
     /// <param name="id">Unique identifier for the object</param>
     /// <param name="data">The object to store</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    Task UpsertAsync<T>(string id, T data);
+    /// <returns>The number of rows affected by the operation</returns>
+    Task<int> UpsertAsync<T>(string id, T data);
 
     /// <summary>
     /// Retrieves a JSON object by its ID from the document store.

@@ -63,9 +63,10 @@ public class DocumentStoreIntegrationTests : IDisposable
         var person = new Person { Name = "John Doe", Age = 30, Email = "john@example.com" };
 
         // Act
-        await _store.UpsertAsync("person1", person);
+        var affectedRows = await _store.UpsertAsync("person1", person);
 
         // Assert
+        Assert.True(affectedRows > 0);
         var retrieved = await _store.GetAsync<Person>("person1");
         Assert.NotNull(retrieved);
         Assert.Equal("John Doe", retrieved.Name);
@@ -83,13 +84,35 @@ public class DocumentStoreIntegrationTests : IDisposable
 
         // Act
         var person2 = new Person { Name = "John Doe", Age = 31, Email = "john.doe@example.com" };
-        await _store.UpsertAsync("person1", person2);
+        var affectedRows = await _store.UpsertAsync("person1", person2);
 
         // Assert
+        Assert.True(affectedRows > 0);
         var retrieved = await _store.GetAsync<Person>("person1");
         Assert.NotNull(retrieved);
         Assert.Equal(31, retrieved.Age);
         Assert.Equal("john.doe@example.com", retrieved.Email);
+    }
+
+    [Fact]
+    public async Task UpsertAsync_ReturnsAffectedRowsCount()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        var person = new Person { Name = "Test", Age = 25, Email = "test@example.com" };
+
+        // Act - First upsert (insert)
+        var insertResult = await _store.UpsertAsync("test1", person);
+
+        // Assert - Insert should affect rows
+        Assert.True(insertResult > 0, "Insert should return affected rows count > 0");
+
+        // Act - Second upsert on same ID (update)
+        person.Age = 26;
+        var updateResult = await _store.UpsertAsync("test1", person);
+
+        // Assert - Update should also affect rows
+        Assert.True(updateResult > 0, "Update should return affected rows count > 0");
     }
 
     [Fact]
