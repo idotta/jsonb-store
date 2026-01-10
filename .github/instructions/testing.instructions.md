@@ -3,8 +3,7 @@
 ## Testing Framework
 
 - **xUnit** - Test framework
-- **FluentAssertions** - Assertion library (preferred)
-- **NSubstitute** - Mocking library (if needed)
+- **Moq** - Mocking library (if needed)
 
 ## Test Project Structure
 
