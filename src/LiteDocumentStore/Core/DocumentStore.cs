@@ -380,7 +380,7 @@ internal sealed class DocumentStore : IDocumentStore
         ArgumentNullException.ThrowIfNull(predicate);
 
         var tableName = _tableNamingConvention.GetTableName<T>();
-        
+
         // Translate the expression to SQL WHERE clause
         var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate);
         var sql = SqlGenerator.GenerateQueryWithWhereSql(tableName, whereClause);

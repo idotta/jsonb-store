@@ -49,7 +49,7 @@ internal static class ExpressionToJsonPath
 
         var parameters = new Dictionary<string, object>();
         var whereClause = BuildWhereClause(predicate.Body, parameters);
-        
+
         return (whereClause, parameters);
     }
 
@@ -130,7 +130,7 @@ internal static class ExpressionToJsonPath
         var (jsonPath, value) = ExtractComparisonParts(binary);
         var paramName = $"p{parameters.Count}";
         parameters[paramName] = value;
-        
+
         return $"json_extract(data, '{jsonPath}') = @{paramName}";
     }
 
@@ -139,7 +139,7 @@ internal static class ExpressionToJsonPath
         var (jsonPath, value) = ExtractComparisonParts(binary);
         var paramName = $"p{parameters.Count}";
         parameters[paramName] = value;
-        
+
         return $"json_extract(data, '{jsonPath}') != @{paramName}";
     }
 
@@ -148,7 +148,7 @@ internal static class ExpressionToJsonPath
         var (jsonPath, value) = ExtractComparisonParts(binary);
         var paramName = $"p{parameters.Count}";
         parameters[paramName] = value;
-        
+
         var op = binary.NodeType switch
         {
             ExpressionType.GreaterThan => ">",
@@ -157,7 +157,7 @@ internal static class ExpressionToJsonPath
             ExpressionType.LessThanOrEqual => "<=",
             _ => throw new NotSupportedException($"Comparison operator {binary.NodeType} not supported")
         };
-        
+
         return $"json_extract(data, '{jsonPath}') {op} @{paramName}";
     }
 
@@ -169,26 +169,26 @@ internal static class ExpressionToJsonPath
             var jsonPath = TranslateToJsonPath(methodCall.Object!);
             var value = GetConstantValue(methodCall.Arguments[0]);
             var paramName = $"p{parameters.Count}";
-            
+
             switch (methodCall.Method.Name)
             {
                 case "Contains":
                     parameters[paramName] = $"%{value}%";
                     return $"json_extract(data, '{jsonPath}') LIKE @{paramName}";
-                    
+
                 case "StartsWith":
                     parameters[paramName] = $"{value}%";
                     return $"json_extract(data, '{jsonPath}') LIKE @{paramName}";
-                    
+
                 case "EndsWith":
                     parameters[paramName] = $"%{value}";
                     return $"json_extract(data, '{jsonPath}') LIKE @{paramName}";
-                    
+
                 default:
                     throw new NotSupportedException($"String method '{methodCall.Method.Name}' is not supported");
             }
         }
-        
+
         throw new NotSupportedException($"Method '{methodCall.Method.Name}' is not supported");
     }
 
@@ -197,7 +197,7 @@ internal static class ExpressionToJsonPath
         // Determine which side is the member access and which is the constant
         Expression memberExpr;
         Expression valueExpr;
-        
+
         if (IsMemberOrPropertyAccess(binary.Left))
         {
             memberExpr = binary.Left;
@@ -215,7 +215,7 @@ internal static class ExpressionToJsonPath
 
         var jsonPath = TranslateToJsonPath(memberExpr);
         var value = GetConstantValue(valueExpr);
-        
+
         return (jsonPath, value);
     }
 
@@ -238,7 +238,7 @@ internal static class ExpressionToJsonPath
         {
             expression = unary.Operand;
         }
-        
+
         return expression is MemberExpression;
     }
 
@@ -256,12 +256,12 @@ internal static class ExpressionToJsonPath
             var member = memberExpr.Member;
             if (member is FieldInfo field)
             {
-                return field.GetValue(constantExpr.Value) 
+                return field.GetValue(constantExpr.Value)
                     ?? throw new InvalidOperationException($"Field '{field.Name}' value cannot be null");
             }
             if (member is PropertyInfo property)
             {
-                return property.GetValue(constantExpr.Value) 
+                return property.GetValue(constantExpr.Value)
                     ?? throw new InvalidOperationException($"Property '{property.Name}' value cannot be null");
             }
         }
@@ -287,7 +287,7 @@ internal static class ExpressionToJsonPath
 
     private static bool IsComparisonOperator(ExpressionType nodeType)
     {
-        return nodeType is ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual 
+        return nodeType is ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual
             or ExpressionType.LessThan or ExpressionType.LessThanOrEqual;
     }
 

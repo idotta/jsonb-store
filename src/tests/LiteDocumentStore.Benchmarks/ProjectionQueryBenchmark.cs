@@ -15,7 +15,7 @@ public class ProjectionQueryBenchmark
     private IDocumentStore _store = null!;
     private ServiceProvider _serviceProvider = null!;
     private const int DocumentCount = 1000;
-    
+
     [GlobalSetup]
     public async Task Setup()
     {
@@ -32,7 +32,7 @@ public class ProjectionQueryBenchmark
 
         // Create table and seed with realistic data
         await _store.CreateTableAsync<LargeDocument>();
-        
+
         var documents = new List<(string id, LargeDocument data)>();
         for (int i = 0; i < DocumentCount; i++)
         {
@@ -81,7 +81,7 @@ public class ProjectionQueryBenchmark
                     BounceRate = (i % 100) / 100.0
                 }
             };
-            
+
             documents.Add((doc.Id, doc));
         }
 
@@ -118,12 +118,12 @@ public class ProjectionQueryBenchmark
     public async Task<int> SelectAsync_FourFields()
     {
         var projections = await _store.SelectAsync<LargeDocument, FourFieldProjection>(
-            d => new FourFieldProjection 
-            { 
-                Id = d.Id, 
-                Name = d.Name, 
-                Email = d.Email, 
-                Category = d.Category 
+            d => new FourFieldProjection
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Email = d.Email,
+                Category = d.Category
             });
         return projections.Count();
     }
@@ -132,11 +132,11 @@ public class ProjectionQueryBenchmark
     public async Task<int> SelectAsync_NestedField()
     {
         var projections = await _store.SelectAsync<LargeDocument, NestedFieldProjection>(
-            d => new NestedFieldProjection 
-            { 
-                Name = d.Name, 
+            d => new NestedFieldProjection
+            {
+                Name = d.Name,
                 ContentTitle = d.Content.Title,
-                ContentAuthor = d.Content.Author 
+                ContentAuthor = d.Content.Author
             });
         return projections.Count();
     }

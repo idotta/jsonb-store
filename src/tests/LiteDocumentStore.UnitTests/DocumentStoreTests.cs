@@ -247,21 +247,21 @@ public class DocumentStoreTests
             await store.CreateTableAsync<TestCustomer>();
 
             // Insert test data
-            await store.UpsertAsync("1", new TestCustomer 
-            { 
-                Id = "1", 
-                Name = "John Doe", 
-                Email = "john@example.com", 
+            await store.UpsertAsync("1", new TestCustomer
+            {
+                Id = "1",
+                Name = "John Doe",
+                Email = "john@example.com",
                 Age = 30,
-                Active = true 
+                Active = true
             });
-            await store.UpsertAsync("2", new TestCustomer 
-            { 
-                Id = "2", 
-                Name = "Jane Smith", 
-                Email = "jane@example.com", 
+            await store.UpsertAsync("2", new TestCustomer
+            {
+                Id = "2",
+                Name = "Jane Smith",
+                Email = "jane@example.com",
                 Age = 25,
-                Active = true 
+                Active = true
             });
 
             // Act - Select only Name and Email
@@ -296,29 +296,29 @@ public class DocumentStoreTests
             await store.CreateTableAsync<TestCustomer>();
 
             // Insert test data
-            await store.UpsertAsync("1", new TestCustomer 
-            { 
-                Id = "1", 
-                Name = "John Doe", 
-                Email = "john@example.com", 
+            await store.UpsertAsync("1", new TestCustomer
+            {
+                Id = "1",
+                Name = "John Doe",
+                Email = "john@example.com",
                 Age = 30,
-                Active = true 
+                Active = true
             });
-            await store.UpsertAsync("2", new TestCustomer 
-            { 
-                Id = "2", 
-                Name = "Jane Smith", 
-                Email = "jane@example.com", 
+            await store.UpsertAsync("2", new TestCustomer
+            {
+                Id = "2",
+                Name = "Jane Smith",
+                Email = "jane@example.com",
                 Age = 25,
-                Active = false 
+                Active = false
             });
-            await store.UpsertAsync("3", new TestCustomer 
-            { 
-                Id = "3", 
-                Name = "Bob Johnson", 
-                Email = "bob@example.com", 
+            await store.UpsertAsync("3", new TestCustomer
+            {
+                Id = "3",
+                Name = "Bob Johnson",
+                Email = "bob@example.com",
                 Age = 35,
-                Active = true 
+                Active = true
             });
 
             // Act - Select Name and Email from only active customers
@@ -355,13 +355,13 @@ public class DocumentStoreTests
             await store.CreateTableAsync<TestCustomer>();
 
             // Insert test data
-            await store.UpsertAsync("1", new TestCustomer 
-            { 
-                Id = "1", 
-                Name = "John Doe", 
-                Email = "john@example.com", 
+            await store.UpsertAsync("1", new TestCustomer
+            {
+                Id = "1",
+                Name = "John Doe",
+                Email = "john@example.com",
                 Age = 30,
-                Active = true 
+                Active = true
             });
 
             // Act - Select using anonymous type

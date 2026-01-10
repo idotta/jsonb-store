@@ -186,9 +186,9 @@ internal static class SqlGenerator
             throw new ArgumentException("At least one field selection is required.", nameof(fieldSelections));
         }
 
-        var selectClauses = fieldSelections.Select(kvp => 
+        var selectClauses = fieldSelections.Select(kvp =>
             $"json_extract(data, '{kvp.Value}') as {kvp.Key}");
-        
+
         return $"SELECT {string.Join(", ", selectClauses)} FROM [{tableName}]";
     }
 
@@ -200,8 +200,8 @@ internal static class SqlGenerator
     /// <param name="whereClause">The WHERE clause (without the WHERE keyword)</param>
     /// <returns>SQL SELECT statement with json_extract() for each field and WHERE clause</returns>
     public static string GenerateSelectFieldsWithWhereSql(
-        string tableName, 
-        Dictionary<string, string> fieldSelections, 
+        string tableName,
+        Dictionary<string, string> fieldSelections,
         string whereClause)
     {
         if (fieldSelections == null || fieldSelections.Count == 0)
@@ -209,9 +209,9 @@ internal static class SqlGenerator
             throw new ArgumentException("At least one field selection is required.", nameof(fieldSelections));
         }
 
-        var selectClauses = fieldSelections.Select(kvp => 
+        var selectClauses = fieldSelections.Select(kvp =>
             $"json_extract(data, '{kvp.Value}') as {kvp.Key}");
-        
+
         return $"SELECT {string.Join(", ", selectClauses)} FROM [{tableName}] WHERE {whereClause}";
     }
 }
