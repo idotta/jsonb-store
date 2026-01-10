@@ -166,21 +166,18 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 6. Relational Features (Fluid Experience)
+## 6. SQLite Optimizations
 
-- [ ] **Relationship support**
-  - [ ] Foreign key helpers between document tables
-  - [ ] `JoinAsync<T1, T2>()` for cross-table queries
-  - [ ] Document references by ID with lazy loading option
-
-- [ ] **Mixed schema support**
-  - [ ] Allow creating traditional relational tables alongside document tables
-  - [ ] `ExecuteSchemaAsync(string ddl)` for custom table creation
-  - [ ] Views over JSON data with `json_extract()`
+- [x] **Mixed schema support** *(already supported)*
+  - [x] Traditional relational tables work alongside document tables via `Connection` property
+  - [x] Users can execute any DDL/DML using `Connection.ExecuteAsync()`
+  - [x] Views over JSON data can be created using raw SQL
 
 - [ ] **Virtual columns** (SQLite generated columns)
-  - [ ] Extract frequently queried JSON fields as indexed virtual columns
-  - [ ] `ALTER TABLE ADD COLUMN email TEXT GENERATED ALWAYS AS (json_extract(data, '$.email'))`
+  - [ ] `AddVirtualColumnAsync<T>(Expression, columnName, createIndex)` helper
+  - [ ] Generates `ALTER TABLE ADD COLUMN ... GENERATED ALWAYS AS (json_extract(data, '$.path'))`
+  - [ ] Optional automatic index creation on the virtual column
+  - [ ] Column existence check before creation
 
 ---
 
