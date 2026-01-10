@@ -739,8 +739,9 @@ public class DocumentStoreIntegrationTests : IDisposable
         await _store.CreateIndexAsync<Person>(p => p.Email);
 
         // Assert - Verify the index exists and can be used
+        // Note: JSON path uses PascalCase to match default System.Text.Json serialization
         var queryPlan = await _connection.QueryAsync<dynamic>(
-            "EXPLAIN QUERY PLAN SELECT json(data) FROM Person WHERE json_extract(data, '$.email') = 'person50@example.com'");
+            "EXPLAIN QUERY PLAN SELECT json(data) FROM Person WHERE json_extract(data, '$.Email') = 'person50@example.com'");
 
         // The query plan should mention the index
         var planText = string.Join(" ", queryPlan.Select(p => p.detail));
@@ -1059,6 +1060,152 @@ public class DocumentStoreIntegrationTests : IDisposable
         // Verify we can use the projected result without the other fields
         Assert.NotNull(result);
     }
+
+    #region AddVirtualColumnAsync Tests
+
+    [Fact]
+    public async Task AddVirtualColumnAsync_Debug_SQLiteSyntax()
+    {
+        // Debug test to verify SQLite virtual column syntax works
+        // Use in-memory database for this test
+        using var memConnection = new SqliteConnection("Data Source=:memory:");
+        await memConnection.OpenAsync();
+        
+        // Check SQLite version
+        var version = await memConnection.QueryFirstAsync<string>("SELECT sqlite_version()");
+        
+        // Test: Create table WITH generated column
+        await memConnection.ExecuteAsync(@"
+            CREATE TABLE Test1 (
+                id INTEGER PRIMARY KEY,
+                a INTEGER,
+                b INTEGER,
+                c INTEGER GENERATED ALWAYS AS (a + b)
+            )");
+        
+        // Use table_xinfo instead of table_info (includes generated column info)
+        var cols1 = (await memConnection.QueryAsync("PRAGMA table_xinfo(Test1)")).ToList();
+        var colNames = cols1.Select(c => (string)c.name).ToList();
+        
+        // Also check if we can actually query the generated column
+        await memConnection.ExecuteAsync("INSERT INTO Test1 (id, a, b) VALUES (1, 10, 20)");
+        var result = await memConnection.QueryFirstOrDefaultAsync<dynamic>("SELECT id, a, b, c FROM Test1 WHERE id = 1");
+        
+        Assert.True(colNames.Contains("c") || result?.c != null, 
+            $"Generated column 'c' not found or not queryable. table_xinfo columns: [{string.Join(", ", colNames)}]. Query result: c={result?.c}. SQLite version: {version}");
+    }
+
+    [Fact]
+    public async Task AddVirtualColumnAsync_CreatesVirtualColumn()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("person1", new Person { Name = "John", Age = 30, Email = "john@example.com" });
+
+        // Act
+        await _store.AddVirtualColumnAsync<Person>(x => x.Email, "email");
+
+        // Assert
+        var introspector = new SchemaIntrospector(_connection);
+        var columns = await introspector.GetColumnsAsync("Person");
+        Assert.Contains(columns, c => c.Name == "email");
+    }
+
+    [Fact]
+    public async Task AddVirtualColumnAsync_WithIndex_CreatesColumnAndIndex()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("person1", new Person { Name = "John", Age = 30, Email = "john@example.com" });
+
+        // Act
+        await _store.AddVirtualColumnAsync<Person>(x => x.Age, "age", createIndex: true, columnType: "INTEGER");
+
+        // Assert
+        var introspector = new SchemaIntrospector(_connection);
+        var columns = await introspector.GetColumnsAsync("Person");
+        Assert.Contains(columns, c => c.Name == "age");
+
+        var indexExists = await introspector.IndexExistsAsync("idx_Person_age");
+        Assert.True(indexExists);
+    }
+
+    [Fact]
+    public async Task AddVirtualColumnAsync_NestedProperty_CreatesColumn()
+    {
+        // Arrange
+        await _store.CreateTableAsync<PersonWithAddress>();
+        await _store.UpsertAsync("person1", new PersonWithAddress
+        {
+            Name = "John",
+            Address = new Address { Street = "123 Main St", City = "New York", Country = "USA" }
+        });
+
+        // Act
+        await _store.AddVirtualColumnAsync<PersonWithAddress>(x => x.Address.City, "city", createIndex: true);
+
+        // Assert
+        var introspector = new SchemaIntrospector(_connection);
+        var columns = await introspector.GetColumnsAsync("PersonWithAddress");
+        Assert.Contains(columns, c => c.Name == "city");
+
+        var indexExists = await introspector.IndexExistsAsync("idx_PersonWithAddress_city");
+        Assert.True(indexExists);
+    }
+
+    [Fact]
+    public async Task AddVirtualColumnAsync_ColumnAlreadyExists_DoesNotThrow()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.AddVirtualColumnAsync<Person>(x => x.Email, "email");
+
+        // Act & Assert - should not throw
+        await _store.AddVirtualColumnAsync<Person>(x => x.Email, "email");
+
+        var introspector = new SchemaIntrospector(_connection);
+        var columns = await introspector.GetColumnsAsync("Person");
+        Assert.Contains(columns, c => c.Name == "email");
+    }
+
+    [Fact]
+    public async Task AddVirtualColumnAsync_VirtualColumnValues_AreCorrect()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("person1", new Person { Name = "John", Age = 30, Email = "john@example.com" });
+        await _store.UpsertAsync("person2", new Person { Name = "Jane", Age = 25, Email = "jane@example.com" });
+
+        // Act
+        await _store.AddVirtualColumnAsync<Person>(x => x.Email, "email");
+        await _store.AddVirtualColumnAsync<Person>(x => x.Age, "age", columnType: "INTEGER");
+
+        // Assert - Query using virtual column
+        var results = await _connection.QueryAsync<dynamic>("SELECT id, email, age FROM Person WHERE age > 26");
+        var resultList = results.ToList();
+        Assert.Single(resultList);
+        Assert.Equal("john@example.com", (string)resultList[0].email);
+        Assert.Equal(30, (long)resultList[0].age);
+    }
+
+    [Fact]
+    public async Task AddVirtualColumnAsync_IndexImprovesQuery_CanBeUsed()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("person1", new Person { Name = "John", Age = 30, Email = "john@example.com" });
+
+        // Act
+        await _store.AddVirtualColumnAsync<Person>(x => x.Email, "email", createIndex: true);
+
+        // Assert - Query using virtual column with index
+        var result = await _connection.QueryFirstOrDefaultAsync<dynamic>(
+            "SELECT * FROM Person WHERE email = @Email",
+            new { Email = "john@example.com" });
+        Assert.NotNull(result);
+    }
+
+    #endregion
 
     private class PersonProjection
     {

@@ -59,6 +59,7 @@ public sealed class SchemaIntrospector
 
     /// <summary>
     /// Gets information about all columns in a specific table.
+    /// Uses PRAGMA table_xinfo to include generated/virtual columns.
     /// </summary>
     /// <param name="tableName">The name of the table</param>
     /// <returns>An enumerable of column information records</returns>
@@ -66,7 +67,8 @@ public sealed class SchemaIntrospector
     {
         ArgumentNullException.ThrowIfNull(tableName);
 
-        var sql = $"PRAGMA table_info([{tableName}])";
+        // Use table_xinfo instead of table_info to include generated columns
+        var sql = $"PRAGMA table_xinfo([{tableName}])";
         var pragmaResults = await _connection.QueryAsync(sql).ConfigureAwait(false);
 
         return pragmaResults.Select(row => new ColumnInfo
@@ -76,7 +78,8 @@ public sealed class SchemaIntrospector
             Type = (string)row.type,
             NotNull = (long)row.notnull == 1,
             DefaultValue = row.dflt_value,
-            IsPrimaryKey = (long)row.pk == 1
+            IsPrimaryKey = (long)row.pk == 1,
+            IsHidden = (long)row.hidden != 0  // hidden=1 for virtual, hidden=2 for stored
         });
     }
 
@@ -123,6 +126,21 @@ public sealed class SchemaIntrospector
             .ConfigureAwait(false);
 
         return count > 0;
+    }
+
+    /// <summary>
+    /// Checks if a column exists in a specific table.
+    /// </summary>
+    /// <param name="tableName">The name of the table</param>
+    /// <param name="columnName">The name of the column to check</param>
+    /// <returns>True if the column exists, false otherwise</returns>
+    public async Task<bool> ColumnExistsAsync(string tableName, string columnName)
+    {
+        ArgumentNullException.ThrowIfNull(tableName);
+        ArgumentNullException.ThrowIfNull(columnName);
+
+        var columns = await GetColumnsAsync(tableName).ConfigureAwait(false);
+        return columns.Any(c => string.Equals(c.Name, columnName, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -216,6 +234,13 @@ public sealed class ColumnInfo
     /// Gets or sets a value indicating whether this column is part of the primary key.
     /// </summary>
     public bool IsPrimaryKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this column is hidden/generated.
+    /// Virtual columns have hidden=1, stored generated columns have hidden=2.
+    /// Regular columns have hidden=0.
+    /// </summary>
+    public bool IsHidden { get; set; }
 }
 
 /// <summary>

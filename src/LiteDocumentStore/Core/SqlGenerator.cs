@@ -214,4 +214,35 @@ internal static class SqlGenerator
 
         return $"SELECT {string.Join(", ", selectClauses)} FROM [{tableName}] WHERE {whereClause}";
     }
+
+    /// <summary>
+    /// Generates SQL for adding a virtual (generated) column based on a JSON path expression.
+    /// The column is generated from json_extract(data, '$.path') and stored as a VIRTUAL column.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="columnName">The name for the new virtual column</param>
+    /// <param name="jsonPath">The JSON path expression (e.g., '$.email')</param>
+    /// <param name="columnType">The SQLite column type for the virtual column (e.g., TEXT, INTEGER)</param>
+    public static string GenerateAddVirtualColumnSql(
+        string tableName,
+        string columnName,
+        string jsonPath,
+        string columnType = "TEXT")
+    {
+        // VIRTUAL columns are computed on read and don't take up storage space
+        // STORED columns are computed on write and stored, but take space
+        // We use VIRTUAL as it's more storage-efficient for JSON extraction
+        return $"ALTER TABLE [{tableName}] ADD COLUMN [{columnName}] {columnType} GENERATED ALWAYS AS (json_extract(data, '{jsonPath}')) VIRTUAL";
+    }
+
+    /// <summary>
+    /// Generates SQL for creating an index on a virtual column.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="indexName">The index name</param>
+    /// <param name="columnName">The column name to index</param>
+    public static string GenerateCreateColumnIndexSql(string tableName, string indexName, string columnName)
+    {
+        return $"CREATE INDEX IF NOT EXISTS [{indexName}] ON [{tableName}] ([{columnName}])";
+    }
 }

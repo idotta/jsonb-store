@@ -173,11 +173,11 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] Users can execute any DDL/DML using `Connection.ExecuteAsync()`
   - [x] Views over JSON data can be created using raw SQL
 
-- [ ] **Virtual columns** (SQLite generated columns)
-  - [ ] `AddVirtualColumnAsync<T>(Expression, columnName, createIndex)` helper
-  - [ ] Generates `ALTER TABLE ADD COLUMN ... GENERATED ALWAYS AS (json_extract(data, '$.path'))`
-  - [ ] Optional automatic index creation on the virtual column
-  - [ ] Column existence check before creation
+- [x] **Virtual columns** (SQLite generated columns)
+  - [x] `AddVirtualColumnAsync<T>(Expression, columnName, createIndex)` helper
+  - [x] Generates `ALTER TABLE ADD COLUMN ... GENERATED ALWAYS AS (json_extract(data, '$.path'))`
+  - [x] Optional automatic index creation on the virtual column
+  - [x] Column existence check before creation
 
 ---
 
