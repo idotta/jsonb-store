@@ -261,7 +261,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 - [ ] **Improve `SqliteJsonbTypeHandler<T>`**
   - [ ] Make JSON serializer injectable
-  - [ ] Support custom `JsonSerializerOptions`
   - [ ] Handle `null` values explicitly
 
 - [ ] **Auto-registration**
