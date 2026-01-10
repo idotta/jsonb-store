@@ -60,6 +60,31 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     Task<bool> DeleteAsync<T>(string id);
 
     /// <summary>
+    /// Deletes multiple JSON objects by their IDs from the document store using a single SQL statement.
+    /// This is more efficient than calling DeleteAsync multiple times.
+    /// </summary>
+    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
+    /// <param name="ids">Collection of unique identifiers of the objects to delete</param>
+    /// <returns>The number of rows affected (documents deleted)</returns>
+    Task<int> DeleteManyAsync<T>(IEnumerable<string> ids);
+
+    /// <summary>
+    /// Checks if a document exists in the store without deserializing it.
+    /// More efficient than GetAsync when you only need to check existence.
+    /// </summary>
+    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
+    /// <param name="id">Unique identifier of the document to check</param>
+    /// <returns>True if the document exists, false otherwise</returns>
+    Task<bool> ExistsAsync<T>(string id);
+
+    /// <summary>
+    /// Gets the total count of documents in a table.
+    /// </summary>
+    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
+    /// <returns>The number of documents in the table</returns>
+    Task<long> CountAsync<T>();
+
+    /// <summary>
     /// Executes a batch of operations within a transaction for optimal performance.
     /// </summary>
     /// <param name="action">Async action to execute within the transaction</param>

@@ -256,6 +256,91 @@ internal sealed class DocumentStore : IDocumentStore
     }
 
     /// <inheritdoc />
+    public async Task<int> DeleteManyAsync<T>(IEnumerable<string> ids)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        ArgumentNullException.ThrowIfNull(ids);
+
+        var idsList = ids.ToList();
+        if (idsList.Count == 0)
+        {
+            _logger.LogDebug("DeleteManyAsync called with empty collection, skipping");
+            return 0;
+        }
+
+        // Validate all IDs
+        for (int i = 0; i < idsList.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(idsList[i]))
+            {
+                throw new ArgumentException($"ID at index {i} cannot be null or empty.", nameof(ids));
+            }
+        }
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateBulkDeleteSql(tableName, idsList.Count);
+
+        _logger.LogDebug("Bulk deleting {Count} documents from table {TableName}", idsList.Count, tableName);
+
+        // Build dynamic parameters object
+        var parameters = new DynamicParameters();
+        for (int i = 0; i < idsList.Count; i++)
+        {
+            parameters.Add($"Id{i}", idsList[i]);
+        }
+
+        var affectedRows = await _connection.ExecuteAsync(sql, parameters);
+
+        _logger.LogInformation("Bulk deleted {Count} documents from table {TableName}, affected rows: {AffectedRows}",
+            idsList.Count, tableName, affectedRows);
+
+        return affectedRows;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ExistsAsync<T>(string id)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            throw new ArgumentException("ID cannot be null or empty.", nameof(id));
+        }
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateExistsSql(tableName);
+
+        _logger.LogDebug("Checking existence of document {Id} in table {TableName}", id, tableName);
+
+        var exists = await _connection.ExecuteScalarAsync<bool>(sql, new { Id = id });
+
+        _logger.LogDebug("Document {Id} exists in table {TableName}: {Exists}", id, tableName, exists);
+
+        return exists;
+    }
+
+    /// <inheritdoc />
+    public async Task<long> CountAsync<T>()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateCountSql(tableName);
+
+        _logger.LogDebug("Counting documents in table {TableName}", tableName);
+
+        var count = await _connection.ExecuteScalarAsync<long>(sql);
+
+        _logger.LogDebug("Table {TableName} contains {Count} documents", tableName, count);
+
+        return count;
+    }
+
+    /// <inheritdoc />
     public async Task ExecuteInTransactionAsync(Func<IDbTransaction, Task> action)
     {
         await ExecuteInTransactionCoreAsync(action);

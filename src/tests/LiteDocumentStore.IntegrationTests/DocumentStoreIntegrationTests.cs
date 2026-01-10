@@ -278,6 +278,228 @@ public class DocumentStoreIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task DeleteManyAsync_DeletesMultipleRecords()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Charlie", Age = 35, Email = "charlie@example.com" });
+        await _store.UpsertAsync("p4", new Person { Name = "Diana", Age = 40, Email = "diana@example.com" });
+
+        var idsToDelete = new[] { "p1", "p3" };
+
+        // Act
+        var affectedRows = await _store.DeleteManyAsync<Person>(idsToDelete);
+
+        // Assert
+        Assert.Equal(2, affectedRows);
+        var all = (await _store.GetAllAsync<Person>()).ToList();
+        Assert.Equal(2, all.Count);
+        Assert.Contains(all, p => p.Name == "Bob");
+        Assert.Contains(all, p => p.Name == "Diana");
+        Assert.DoesNotContain(all, p => p.Name == "Alice");
+        Assert.DoesNotContain(all, p => p.Name == "Charlie");
+    }
+
+    [Fact]
+    public async Task DeleteManyAsync_HandlesEmptyCollection()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+        var idsToDelete = Array.Empty<string>();
+
+        // Act
+        var affectedRows = await _store.DeleteManyAsync<Person>(idsToDelete);
+
+        // Assert
+        Assert.Equal(0, affectedRows);
+        var all = (await _store.GetAllAsync<Person>()).ToList();
+        Assert.Single(all);
+    }
+
+    [Fact]
+    public async Task DeleteManyAsync_HandlesNonExistentIds()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+        var idsToDelete = new[] { "nonexistent1", "nonexistent2" };
+
+        // Act
+        var affectedRows = await _store.DeleteManyAsync<Person>(idsToDelete);
+
+        // Assert
+        Assert.Equal(0, affectedRows);
+        var all = (await _store.GetAllAsync<Person>()).ToList();
+        Assert.Single(all);
+    }
+
+    [Fact]
+    public async Task DeleteManyAsync_HandlesMixedExistentAndNonExistentIds()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" });
+        var idsToDelete = new[] { "p1", "nonexistent", "p2" };
+
+        // Act
+        var affectedRows = await _store.DeleteManyAsync<Person>(idsToDelete);
+
+        // Assert
+        Assert.Equal(2, affectedRows);
+        var all = (await _store.GetAllAsync<Person>()).ToList();
+        Assert.Empty(all);
+    }
+
+    [Fact]
+    public async Task DeleteManyAsync_ThrowsOnNullId()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        var idsToDelete = new[] { "p1", "", "p2" };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await _store.DeleteManyAsync<Person>(idsToDelete);
+        });
+    }
+
+    [Fact]
+    public async Task DeleteManyAsync_ThrowsOnNullCollection()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        {
+            await _store.DeleteManyAsync<Person>(null!);
+        });
+    }
+
+    [Fact]
+    public async Task ExistsAsync_ReturnsTrue_WhenDocumentExists()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+
+        // Act
+        var exists = await _store.ExistsAsync<Person>("p1");
+
+        // Assert
+        Assert.True(exists);
+    }
+
+    [Fact]
+    public async Task ExistsAsync_ReturnsFalse_WhenDocumentDoesNotExist()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+
+        // Act
+        var exists = await _store.ExistsAsync<Person>("nonexistent");
+
+        // Assert
+        Assert.False(exists);
+    }
+
+    [Fact]
+    public async Task ExistsAsync_ThrowsOnNullId()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await _store.ExistsAsync<Person>(null!);
+        });
+    }
+
+    [Fact]
+    public async Task ExistsAsync_ThrowsOnEmptyId()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await _store.ExistsAsync<Person>("");
+        });
+    }
+
+    [Fact]
+    public async Task CountAsync_ReturnsZero_WhenTableIsEmpty()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+
+        // Act
+        var count = await _store.CountAsync<Person>();
+
+        // Assert
+        Assert.Equal(0, count);
+    }
+
+    [Fact]
+    public async Task CountAsync_ReturnsCorrectCount_WhenTableHasDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Charlie", Age = 35, Email = "charlie@example.com" });
+
+        // Act
+        var count = await _store.CountAsync<Person>();
+
+        // Assert
+        Assert.Equal(3, count);
+    }
+
+    [Fact]
+    public async Task CountAsync_UpdatesAfterDelete()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Charlie", Age = 35, Email = "charlie@example.com" });
+
+        // Act
+        var countBefore = await _store.CountAsync<Person>();
+        await _store.DeleteAsync<Person>("p2");
+        var countAfter = await _store.CountAsync<Person>();
+
+        // Assert
+        Assert.Equal(3, countBefore);
+        Assert.Equal(2, countAfter);
+    }
+
+    [Fact]
+    public async Task CountAsync_UpdatesAfterUpsert()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+
+        // Act
+        var countBefore = await _store.CountAsync<Person>();
+        await _store.UpsertAsync("p2", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" });
+        var countAfter = await _store.CountAsync<Person>();
+
+        // Assert
+        Assert.Equal(1, countBefore);
+        Assert.Equal(2, countAfter);
+    }
+
+    [Fact]
     public async Task ExecuteInTransactionAsync_CommitsChanges_WhenSuccessful()
     {
         // Arrange

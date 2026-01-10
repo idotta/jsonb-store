@@ -58,6 +58,22 @@ internal static class SqlGenerator
     }
 
     /// <summary>
+    /// Generates SQL to check if a document exists by ID.
+    /// </summary>
+    public static string GenerateExistsSql(string tableName)
+    {
+        return $"SELECT EXISTS(SELECT 1 FROM [{tableName}] WHERE id = @Id)";
+    }
+
+    /// <summary>
+    /// Generates SQL to count all documents in a table.
+    /// </summary>
+    public static string GenerateCountSql(string tableName)
+    {
+        return $"SELECT COUNT(*) FROM [{tableName}]";
+    }
+
+    /// <summary>
     /// Generates SQL to check if an index exists.
     /// </summary>
     public static string GenerateCheckIndexExistsSql()
@@ -113,5 +129,27 @@ internal static class SqlGenerator
             ON CONFLICT(id) DO UPDATE SET
                 data = excluded.data,
                 updated_at = excluded.updated_at";
+    }
+
+    /// <summary>
+    /// Generates SQL for bulk deleting multiple documents by their IDs using a single statement.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="count">The number of items to delete</param>
+    public static string GenerateBulkDeleteSql(string tableName, int count)
+    {
+        if (count <= 0)
+        {
+            throw new ArgumentException("Count must be greater than zero.", nameof(count));
+        }
+
+        // Generate parameter placeholders for each ID: @Id0, @Id1, @Id2, ...
+        var idParameters = new List<string>(count);
+        for (int i = 0; i < count; i++)
+        {
+            idParameters.Add($"@Id{i}");
+        }
+
+        return $"DELETE FROM [{tableName}] WHERE id IN ({string.Join(", ", idParameters)})";
     }
 }
