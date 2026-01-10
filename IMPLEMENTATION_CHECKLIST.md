@@ -246,15 +246,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: NullLogger support when no logger is provided
   - [ ] Log slow queries (configurable threshold)
 
-- [ ] **Metrics**
-  - [ ] Operation counters (inserts, updates, deletes, queries)
-  - [ ] Latency histograms
-  - [ ] Optional OpenTelemetry integration
-
-- [ ] **Diagnostics**
-  - [ ] `DiagnosticSource` events for APM tools
-  - [ ] Activity tracing for distributed systems
-
 ---
 
 ## 10. Type Handler System
@@ -316,7 +307,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 - [ ] **Sample projects**
   - [ ] Console app example
-  - [ ] ASP.NET Core integration example
   - [ ] Multi-table relational + document hybrid example
 
 ---
@@ -342,10 +332,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [ ] All user-facing table names validated/sanitized
   - [ ] Parameterized queries only (exists via Dapper)
   - [ ] Consider allowlist for table name characters
-
-- [ ] **Encryption at rest** (optional)
-  - [ ] Document SQLCipher integration path
-  - [ ] Or recommend file-system encryption
 
 ---
 
