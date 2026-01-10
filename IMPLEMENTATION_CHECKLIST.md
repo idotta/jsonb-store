@@ -145,10 +145,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] `ExistsAsync<T>(string id)` without deserializing
   - [x] `CountAsync<T>()` for table row count
 
-- [ ] **Pagination**
-  - [ ] `GetPagedAsync<T>(int offset, int limit)`
-  - [ ] Cursor-based pagination for large datasets
-
 ---
 
 ## 5. Querying Capabilities (The Hybrid Experience)
