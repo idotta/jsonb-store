@@ -127,6 +127,26 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     Task CreateCompositeIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>>[] jsonPaths, string? indexName = null);
 
     /// <summary>
+    /// Queries documents by a JSON path and value using json_extract().
+    /// Supports patterns like: $.property, $.nested.property, $.array[0]
+    /// </summary>
+    /// <typeparam name="T">Type of the objects to retrieve (also used as table name)</typeparam>
+    /// <typeparam name="TValue">Type of the value to match</typeparam>
+    /// <param name="jsonPath">The JSON path to query (e.g., '$.email', '$.address.city')</param>
+    /// <param name="value">The value to match</param>
+    /// <returns>An enumerable of deserialized objects matching the query</returns>
+    Task<IEnumerable<T>> QueryAsync<T, TValue>(string jsonPath, TValue value);
+
+    /// <summary>
+    /// Queries documents using a LINQ expression predicate that gets translated to SQLite json_extract() queries.
+    /// Supports property access, nested properties, comparisons, and logical operators.
+    /// </summary>
+    /// <typeparam name="T">Type of the objects to retrieve (also used as table name)</typeparam>
+    /// <param name="predicate">The predicate expression to filter documents</param>
+    /// <returns>An enumerable of deserialized objects matching the query</returns>
+    Task<IEnumerable<T>> QueryAsync<T>(System.Linq.Expressions.Expression<Func<T, bool>> predicate);
+
+    /// <summary>
     /// Gets the underlying SQLite connection for advanced operations and raw SQL access.
     /// This enables the hybrid experience where users can use both document storage
     /// and traditional relational database features.

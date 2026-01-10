@@ -760,6 +760,186 @@ public class DocumentStoreIntegrationTests : IDisposable
         });
     }
 
+    [Fact]
+    public async Task QueryAsync_WithJsonPath_ReturnsMatchingDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Jane Smith", Age = 25, Email = "jane@example.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Bob Johnson", Age = 30, Email = "bob@example.com" });
+
+        // Act
+        var results = await _store.QueryAsync<Person, int>("$.Age", 30);
+
+        // Assert
+        var resultList = results.ToList();
+        Assert.Equal(2, resultList.Count);
+        Assert.Contains(resultList, p => p.Name == "John Doe");
+        Assert.Contains(resultList, p => p.Name == "Bob Johnson");
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithJsonPath_NoMatches_ReturnsEmpty()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
+
+        // Act
+        var results = await _store.QueryAsync<Person, int>("$.age", 99);
+
+        // Assert
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithPredicate_SimpleEquality_ReturnsMatchingDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Jane Smith", Age = 25, Email = "jane@example.com" });
+
+        // Act
+        var results = await _store.QueryAsync<Person>(p => p.Name == "Jane Smith");
+
+        // Assert
+        var resultList = results.ToList();
+        Assert.Single(resultList);
+        Assert.Equal("Jane Smith", resultList[0].Name);
+        Assert.Equal(25, resultList[0].Age);
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithPredicate_Comparison_ReturnsMatchingDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Jane Smith", Age = 25, Email = "jane@example.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Bob Johnson", Age = 35, Email = "bob@example.com" });
+
+        // Act
+        var results = await _store.QueryAsync<Person>(p => p.Age > 28);
+
+        // Assert
+        var resultList = results.ToList();
+        Assert.Equal(2, resultList.Count);
+        Assert.Contains(resultList, p => p.Name == "John Doe");
+        Assert.Contains(resultList, p => p.Name == "Bob Johnson");
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithPredicate_AndCondition_ReturnsMatchingDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Jane Smith", Age = 30, Email = "jane@example.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Bob Johnson", Age = 25, Email = "bob@example.com" });
+
+        // Act
+        var results = await _store.QueryAsync<Person>(p => p.Age == 30 && p.Name.StartsWith("J"));
+
+        // Assert
+        var resultList = results.ToList();
+        Assert.Equal(2, resultList.Count);
+        Assert.Contains(resultList, p => p.Name == "John Doe");
+        Assert.Contains(resultList, p => p.Name == "Jane Smith");
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithPredicate_OrCondition_ReturnsMatchingDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Jane Smith", Age = 25, Email = "jane@example.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Bob Johnson", Age = 35, Email = "bob@example.com" });
+
+        // Act
+        var results = await _store.QueryAsync<Person>(p => p.Age < 27 || p.Age > 32);
+
+        // Assert
+        var resultList = results.ToList();
+        Assert.Equal(2, resultList.Count);
+        Assert.Contains(resultList, p => p.Name == "Jane Smith");
+        Assert.Contains(resultList, p => p.Name == "Bob Johnson");
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithPredicate_StringContains_ReturnsMatchingDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Jane Smith", Age = 25, Email = "jane@test.com" });
+        await _store.UpsertAsync("p3", new Person { Name = "Bob Johnson", Age = 35, Email = "bob@example.com" });
+
+        // Act
+        var results = await _store.QueryAsync<Person>(p => p.Email.Contains("@example.com"));
+
+        // Assert
+        var resultList = results.ToList();
+        Assert.Equal(2, resultList.Count);
+        Assert.Contains(resultList, p => p.Name == "John Doe");
+        Assert.Contains(resultList, p => p.Name == "Bob Johnson");
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithPredicate_NestedProperty_ReturnsMatchingDocuments()
+    {
+        // Arrange
+        await _store.CreateTableAsync<PersonWithAddress>();
+        await _store.UpsertAsync("p1", new PersonWithAddress
+        {
+            Name = "John Doe",
+            Address = new Address { City = "New York", Street = "5th Ave", Country = "USA" }
+        });
+        await _store.UpsertAsync("p2", new PersonWithAddress
+        {
+            Name = "Jane Smith",
+            Address = new Address { City = "London", Street = "Baker St", Country = "UK" }
+        });
+        await _store.UpsertAsync("p3", new PersonWithAddress
+        {
+            Name = "Bob Johnson",
+            Address = new Address { City = "New York", Street = "Broadway", Country = "USA" }
+        });
+
+        // Act
+        var results = await _store.QueryAsync<PersonWithAddress>(p => p.Address.City == "New York");
+
+        // Assert
+        var resultList = results.ToList();
+        Assert.Equal(2, resultList.Count);
+        Assert.Contains(resultList, p => p.Name == "John Doe");
+        Assert.Contains(resultList, p => p.Name == "Bob Johnson");
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithJsonPath_NullOrWhitespace_ThrowsArgumentException()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _store.QueryAsync<Person, int>("", 30));
+    }
+
+    [Fact]
+    public async Task QueryAsync_WithPredicate_NullPredicate_ThrowsArgumentNullException()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await _store.QueryAsync<Person>(null!));
+    }
+
     private class Person
     {
         public string Name { get; set; } = string.Empty;

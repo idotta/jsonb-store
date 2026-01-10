@@ -341,6 +341,65 @@ internal sealed class DocumentStore : IDocumentStore
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<T>> QueryAsync<T, TValue>(string jsonPath, TValue value)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        if (string.IsNullOrWhiteSpace(jsonPath))
+        {
+            throw new ArgumentException("JSON path cannot be null or empty.", nameof(jsonPath));
+        }
+
+        ArgumentNullException.ThrowIfNull(value);
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateQueryByJsonPathSql(tableName, jsonPath);
+
+        _logger.LogDebug("Querying table {TableName} by JSON path {JsonPath} with value {Value}",
+            tableName, jsonPath, value);
+
+        var jsonResults = await _connection.QueryAsync<string>(sql, new { Value = value }).ConfigureAwait(false);
+        var documents = jsonResults
+            .Select(json => _jsonSerializer.Deserialize<T>(json))
+            .Where(doc => doc != null)
+            .Select(doc => doc!)
+            .ToList();
+
+        _logger.LogDebug("Query returned {Count} documents from table {TableName}", documents.Count, tableName);
+
+        return documents;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<T>> QueryAsync<T>(System.Linq.Expressions.Expression<Func<T, bool>> predicate)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        ArgumentNullException.ThrowIfNull(predicate);
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        
+        // Translate the expression to SQL WHERE clause
+        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate);
+        var sql = SqlGenerator.GenerateQueryWithWhereSql(tableName, whereClause);
+
+        _logger.LogDebug("Querying table {TableName} with WHERE clause: {WhereClause}", tableName, whereClause);
+
+        var jsonResults = await _connection.QueryAsync<string>(sql, parameters).ConfigureAwait(false);
+        var documents = jsonResults
+            .Select(json => _jsonSerializer.Deserialize<T>(json))
+            .Where(doc => doc != null)
+            .Select(doc => doc!)
+            .ToList();
+
+        _logger.LogDebug("Query returned {Count} documents from table {TableName}", documents.Count, tableName);
+
+        return documents;
+    }
+
+    /// <inheritdoc />
     public async Task ExecuteInTransactionAsync(Func<IDbTransaction, Task> action)
     {
         await ExecuteInTransactionCoreAsync(action);

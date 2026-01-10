@@ -152,4 +152,24 @@ internal static class SqlGenerator
 
         return $"DELETE FROM [{tableName}] WHERE id IN ({string.Join(", ", idParameters)})";
     }
+
+    /// <summary>
+    /// Generates SQL for querying documents by a JSON path and value.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="jsonPath">The JSON path to query (e.g., '$.email')</param>
+    public static string GenerateQueryByJsonPathSql(string tableName, string jsonPath)
+    {
+        return $"SELECT json(data) as data FROM [{tableName}] WHERE json_extract(data, '{jsonPath}') = @Value";
+    }
+
+    /// <summary>
+    /// Generates SQL for querying documents with a custom WHERE clause.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="whereClause">The WHERE clause (without the WHERE keyword)</param>
+    public static string GenerateQueryWithWhereSql(string tableName, string whereClause)
+    {
+        return $"SELECT json(data) as data FROM [{tableName}] WHERE {whereClause}";
+    }
 }

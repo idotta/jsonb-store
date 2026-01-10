@@ -149,19 +149,10 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ## 5. Querying Capabilities (The Hybrid Experience)
 
-- [ ] **JSON path querying**
-  - [ ] `QueryAsync<T>(string jsonPath, object value)` using `json_extract()`
-  - [ ] `QueryAsync<T>(Expression<Func<T, bool>> predicate)` with expression tree translation
-  - [ ] Support for `$.property`, `$.nested.property`, `$.array[0]`
-
-- [ ] **Fluent query builder**
-  ```csharp
-  repo.Query<Customer>()
-      .Where(c => c.Email, "Contains", "@company.com")
-      .OrderBy("$.lastName")
-      .Take(10)
-      .ToListAsync();
-  ```
+- [x] **JSON path querying**
+  - [x] `QueryAsync<T>(string jsonPath, object value)` using `json_extract()`
+  - [x] `QueryAsync<T>(Expression<Func<T, bool>> predicate)` with expression tree translation
+  - [x] Support for `$.property`, `$.nested.property`, `$.array[0]`
 
 - [ ] **Raw SQL escape hatch** (critical for hybrid use)
   - [x] **IMPLEMENTED**: Direct access to Dapper's full API via `Connection` property (exists)
