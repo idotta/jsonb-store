@@ -131,26 +131,19 @@ The implementation has progressed beyond the original Phase 1 scope with several
 - [x] **Transaction Support**
   - [x] **NEW**: `ExecuteInTransactionAsync` with two overloads (with/without IDbTransaction)
   - [x] **NEW**: Automatic commit on success, rollback on exception
-  - [ ] Return affected rows count or the entity itself
-  - [ ] Support partial updates (PATCH semantics with `json_patch()`)
+  - [x] Return affected rows count from `UpsertAsync`
 
-- [ ] **Improved Upsert**
-  - [ ] Return affected rows count or the entity itself
-  - [ ] Support partial updates (PATCH semantics with `json_patch()`)
-  - [ ] Bulk upsert with single statement (`INSERT ... VALUES (...), (...), ...`)
+- [x] **Improved Upsert**
+  - [x] Return affected rows count from `UpsertAsync`
+  - [x] Bulk upsert with single statement (`INSERT ... VALUES (...), (...), ...`)
 
-- [ ] **Batch operations**
-  - [ ] `UpsertManyAsync<T>(IEnumerable<(string id, T data)> items)`
-  - [ ] `DeleteManyAsync<T>(IEnumerable<string> ids)`
-  - [ ] Configurable batch size for large datasets
+- [x] **Batch operations**
+  - [x] `UpsertManyAsync<T>(IEnumerable<(string id, T data)> items)`
+  - [x] `DeleteManyAsync<T>(IEnumerable<string> ids)`
 
-- [ ] **Existence checks**
-  - [ ] `ExistsAsync<T>(string id)` without deserializing
-  - [ ] `CountAsync<T>()` for table row count
-
-- [ ] **Pagination**
-  - [ ] `GetPagedAsync<T>(int offset, int limit)`
-  - [ ] Cursor-based pagination for large datasets
+- [x] **Existence checks**
+  - [x] `ExistsAsync<T>(string id)` without deserializing
+  - [x] `CountAsync<T>()` for table row count
 
 ---
 
@@ -268,7 +261,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 - [ ] **Improve `SqliteJsonbTypeHandler<T>`**
   - [ ] Make JSON serializer injectable
-  - [ ] Support custom `JsonSerializerOptions`
   - [ ] Handle `null` values explicitly
 
 - [ ] **Auto-registration**

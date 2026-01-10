@@ -73,11 +73,7 @@ internal sealed class DocumentStore : IDocumentStore
         }
     }
 
-    /// <summary>
-    /// Creates a table for storing JSON objects with a generic schema using JSONB format.
-    /// The table name will be the name of the type T.
-    /// </summary>
-    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
+    /// <inheritdoc />
     public async Task CreateTableAsync<T>()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -91,13 +87,8 @@ internal sealed class DocumentStore : IDocumentStore
         _logger.LogInformation("Table {TableName} created successfully", tableName);
     }
 
-    /// <summary>
-    /// Inserts or updates a JSON object in a table named after the type T using JSONB format.
-    /// </summary>
-    /// <typeparam name="T">Type of the object to store (also used as table name)</typeparam>
-    /// <param name="id">Unique identifier for the object</param>
-    /// <param name="data">The object to store</param>
-    public async Task UpsertAsync<T>(string id, T data)
+    /// <inheritdoc />
+    public async Task<int> UpsertAsync<T>(string id, T data)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         EnsureConnectionOpen();
@@ -115,21 +106,69 @@ internal sealed class DocumentStore : IDocumentStore
 
         _logger.LogDebug("Upserting document {Id} into table {TableName}", id, tableName);
 
-        await _connection.ExecuteAsync(sql, new
+        var affectedRows = await _connection.ExecuteAsync(sql, new
         {
             Id = id,
             Data = json
         });
 
         _logger.LogDebug("Document {Id} upserted successfully in table {TableName}", id, tableName);
+
+        return affectedRows;
     }
 
-    /// <summary>
-    /// Retrieves a JSON object by its ID from a table named after the type T.
-    /// </summary>
-    /// <typeparam name="T">Type of the object to retrieve (also used as table name)</typeparam>
-    /// <param name="id">Unique identifier of the object</param>
-    /// <returns>The deserialized object, or default if not found</returns>
+    /// <inheritdoc />
+    public async Task<int> UpsertManyAsync<T>(IEnumerable<(string id, T data)> items)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        ArgumentNullException.ThrowIfNull(items);
+
+        var itemsList = items.ToList();
+        if (itemsList.Count == 0)
+        {
+            _logger.LogDebug("UpsertManyAsync called with empty collection, skipping");
+            return 0;
+        }
+
+        // Validate all items
+        for (int i = 0; i < itemsList.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(itemsList[i].id))
+            {
+                throw new ArgumentException($"ID at index {i} cannot be null or empty.", nameof(items));
+            }
+            if (itemsList[i].data == null)
+            {
+                throw new ArgumentException($"Data at index {i} cannot be null.", nameof(items));
+            }
+        }
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateBulkUpsertSql(tableName, itemsList.Count);
+
+        _logger.LogDebug("Bulk upserting {Count} documents into table {TableName}", itemsList.Count, tableName);
+
+        // Build dynamic parameters object
+        var parameters = new DynamicParameters();
+        for (int i = 0; i < itemsList.Count; i++)
+        {
+            var (id, data) = itemsList[i];
+            var json = _jsonSerializer.Serialize(data);
+            parameters.Add($"Id{i}", id);
+            parameters.Add($"Data{i}", json);
+        }
+
+        var affectedRows = await _connection.ExecuteAsync(sql, parameters);
+
+        _logger.LogInformation("Bulk upserted {Count} documents into table {TableName}, affected rows: {AffectedRows}",
+            itemsList.Count, tableName, affectedRows);
+
+        return affectedRows;
+    }
+
+    /// <inheritdoc />
     public async Task<T?> GetAsync<T>(string id)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -158,11 +197,7 @@ internal sealed class DocumentStore : IDocumentStore
         return result;
     }
 
-    /// <summary>
-    /// Retrieves all JSON objects from a table named after the type T.
-    /// </summary>
-    /// <typeparam name="T">Type of the objects to retrieve (also used as table name)</typeparam>
-    /// <returns>An enumerable of deserialized objects</returns>
+    /// <inheritdoc />
     public async Task<IEnumerable<T>> GetAllAsync<T>()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -189,12 +224,7 @@ internal sealed class DocumentStore : IDocumentStore
         return results;
     }
 
-    /// <summary>
-    /// Deletes a JSON object by its ID from a table named after the type T.
-    /// </summary>
-    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
-    /// <param name="id">Unique identifier of the object to delete</param>
-    /// <returns>True if the object was deleted, false if it didn't exist</returns>
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync<T>(string id)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -225,19 +255,98 @@ internal sealed class DocumentStore : IDocumentStore
         return deleted;
     }
 
-    /// <summary>
-    /// Executes a batch of operations within a transaction for optimal performance.
-    /// </summary>
-    /// <param name="action">Async action to execute within the transaction</param>
+    /// <inheritdoc />
+    public async Task<int> DeleteManyAsync<T>(IEnumerable<string> ids)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        ArgumentNullException.ThrowIfNull(ids);
+
+        var idsList = ids.ToList();
+        if (idsList.Count == 0)
+        {
+            _logger.LogDebug("DeleteManyAsync called with empty collection, skipping");
+            return 0;
+        }
+
+        // Validate all IDs
+        for (int i = 0; i < idsList.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(idsList[i]))
+            {
+                throw new ArgumentException($"ID at index {i} cannot be null or empty.", nameof(ids));
+            }
+        }
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateBulkDeleteSql(tableName, idsList.Count);
+
+        _logger.LogDebug("Bulk deleting {Count} documents from table {TableName}", idsList.Count, tableName);
+
+        // Build dynamic parameters object
+        var parameters = new DynamicParameters();
+        for (int i = 0; i < idsList.Count; i++)
+        {
+            parameters.Add($"Id{i}", idsList[i]);
+        }
+
+        var affectedRows = await _connection.ExecuteAsync(sql, parameters);
+
+        _logger.LogInformation("Bulk deleted {Count} documents from table {TableName}, affected rows: {AffectedRows}",
+            idsList.Count, tableName, affectedRows);
+
+        return affectedRows;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ExistsAsync<T>(string id)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            throw new ArgumentException("ID cannot be null or empty.", nameof(id));
+        }
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateExistsSql(tableName);
+
+        _logger.LogDebug("Checking existence of document {Id} in table {TableName}", id, tableName);
+
+        var exists = await _connection.ExecuteScalarAsync<bool>(sql, new { Id = id });
+
+        _logger.LogDebug("Document {Id} exists in table {TableName}: {Exists}", id, tableName, exists);
+
+        return exists;
+    }
+
+    /// <inheritdoc />
+    public async Task<long> CountAsync<T>()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateCountSql(tableName);
+
+        _logger.LogDebug("Counting documents in table {TableName}", tableName);
+
+        var count = await _connection.ExecuteScalarAsync<long>(sql);
+
+        _logger.LogDebug("Table {TableName} contains {Count} documents", tableName, count);
+
+        return count;
+    }
+
+    /// <inheritdoc />
     public async Task ExecuteInTransactionAsync(Func<IDbTransaction, Task> action)
     {
         await ExecuteInTransactionCoreAsync(action);
     }
 
-    /// <summary>
-    /// Executes a batch of operations within a transaction for optimal performance.
-    /// </summary>
-    /// <param name="action">Async action to execute within the transaction</param>
+    /// <inheritdoc />
     public async Task ExecuteInTransactionAsync(Func<Task> action)
     {
         await ExecuteInTransactionCoreAsync(_ => action());
@@ -272,13 +381,7 @@ internal sealed class DocumentStore : IDocumentStore
         }
     }
 
-    /// <summary>
-    /// Creates an index on a JSON path expression for optimized query performance.
-    /// Automatically checks if the index exists before creation to avoid errors.
-    /// </summary>
-    /// <typeparam name="T">Type whose table will have the index created</typeparam>
-    /// <param name="jsonPath">Expression selecting the JSON property to index</param>
-    /// <param name="indexName">Optional custom index name. If null, a name will be auto-generated</param>
+    /// <inheritdoc />
     public async Task CreateIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>> jsonPath, string? indexName = null)
     {
         ArgumentNullException.ThrowIfNull(jsonPath);
@@ -310,13 +413,7 @@ internal sealed class DocumentStore : IDocumentStore
             finalIndexName, tableName, pathString);
     }
 
-    /// <summary>
-    /// Creates a composite index on multiple JSON path expressions for optimized multi-column queries.
-    /// Automatically checks if the index exists before creation to avoid errors.
-    /// </summary>
-    /// <typeparam name="T">Type whose table will have the index created</typeparam>
-    /// <param name="jsonPaths">Array of expressions selecting the JSON properties to index</param>
-    /// <param name="indexName">Optional custom index name. If null, a name will be auto-generated</param>
+    /// <inheritdoc />
     public async Task CreateCompositeIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>>[] jsonPaths, string? indexName = null)
     {
         ArgumentNullException.ThrowIfNull(jsonPaths);
@@ -419,11 +516,7 @@ internal sealed class DocumentStore : IDocumentStore
         return $"idx_{tableName}_composite_{pathsPart}";
     }
 
-    /// <summary>
-    /// Checks if the document store is healthy and ready for operations.
-    /// Validates the connection state and SQLite version (requires 3.45+ for JSONB support).
-    /// </summary>
-    /// <returns>True if the store is healthy and ready for operations, false otherwise</returns>
+    /// <inheritdoc />
     public async Task<bool> IsHealthyAsync()
     {
         try

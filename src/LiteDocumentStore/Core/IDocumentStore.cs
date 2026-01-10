@@ -24,8 +24,17 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     /// <typeparam name="T">Type of the object to store (also used as table name)</typeparam>
     /// <param name="id">Unique identifier for the object</param>
     /// <param name="data">The object to store</param>
-    /// <returns>A task representing the asynchronous operation</returns>
-    Task UpsertAsync<T>(string id, T data);
+    /// <returns>The number of rows affected by the operation</returns>
+    Task<int> UpsertAsync<T>(string id, T data);
+
+    /// <summary>
+    /// Inserts or updates multiple JSON objects in the document store using a single SQL statement.
+    /// This is more efficient than calling UpsertAsync multiple times.
+    /// </summary>
+    /// <typeparam name="T">Type of the objects to store (also used as table name)</typeparam>
+    /// <param name="items">Collection of (id, data) tuples to upsert</param>
+    /// <returns>The total number of rows affected by the operation</returns>
+    Task<int> UpsertManyAsync<T>(IEnumerable<(string id, T data)> items);
 
     /// <summary>
     /// Retrieves a JSON object by its ID from the document store.
@@ -49,6 +58,31 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     /// <param name="id">Unique identifier of the object to delete</param>
     /// <returns>True if the object was deleted, false if it didn't exist</returns>
     Task<bool> DeleteAsync<T>(string id);
+
+    /// <summary>
+    /// Deletes multiple JSON objects by their IDs from the document store using a single SQL statement.
+    /// This is more efficient than calling DeleteAsync multiple times.
+    /// </summary>
+    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
+    /// <param name="ids">Collection of unique identifiers of the objects to delete</param>
+    /// <returns>The number of rows affected (documents deleted)</returns>
+    Task<int> DeleteManyAsync<T>(IEnumerable<string> ids);
+
+    /// <summary>
+    /// Checks if a document exists in the store without deserializing it.
+    /// More efficient than GetAsync when you only need to check existence.
+    /// </summary>
+    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
+    /// <param name="id">Unique identifier of the document to check</param>
+    /// <returns>True if the document exists, false otherwise</returns>
+    Task<bool> ExistsAsync<T>(string id);
+
+    /// <summary>
+    /// Gets the total count of documents in a table.
+    /// </summary>
+    /// <typeparam name="T">Type whose name will be used as the table name</typeparam>
+    /// <returns>The number of documents in the table</returns>
+    Task<long> CountAsync<T>();
 
     /// <summary>
     /// Executes a batch of operations within a transaction for optimal performance.
