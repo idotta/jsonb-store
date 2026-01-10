@@ -133,10 +133,9 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: Automatic commit on success, rollback on exception
   - [x] Return affected rows count from `UpsertAsync`
 
-- [ ] **Improved Upsert**
-  - [ ] Return affected rows count or the entity itself
-  - [ ] Support partial updates (PATCH semantics with `json_patch()`)
-  - [ ] Bulk upsert with single statement (`INSERT ... VALUES (...), (...), ...`)
+- [x] **Improved Upsert**
+  - [x] Return affected rows count from `UpsertAsync`
+  - [x] Bulk upsert with single statement (`INSERT ... VALUES (...), (...), ...`)
 
 - [ ] **Batch operations**
   - [ ] `UpsertManyAsync<T>(IEnumerable<(string id, T data)> items)`

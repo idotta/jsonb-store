@@ -87,4 +87,31 @@ internal static class SqlGenerator
         var extractClauses = string.Join(", ", jsonPaths.Select(p => $"json_extract(data, '{p}')"));
         return $"CREATE INDEX IF NOT EXISTS [{indexName}] ON [{tableName}] ({extractClauses})";
     }
+
+    /// <summary>
+    /// Generates SQL for bulk upserting multiple documents using a single statement.
+    /// </summary>
+    /// <param name="tableName">The table name</param>
+    /// <param name="count">The number of items to upsert</param>
+    public static string GenerateBulkUpsertSql(string tableName, int count)
+    {
+        if (count <= 0)
+        {
+            throw new ArgumentException("Count must be greater than zero.", nameof(count));
+        }
+
+        // Generate parameter placeholders for each item: (@Id0, jsonb(@Data0)), (@Id1, jsonb(@Data1)), ...
+        var valuesClauses = new List<string>(count);
+        for (int i = 0; i < count; i++)
+        {
+            valuesClauses.Add($"(@Id{i}, jsonb(@Data{i}), strftime('%s', 'now'))");
+        }
+
+        return $@"
+            INSERT INTO [{tableName}] (id, data, updated_at)
+            VALUES {string.Join(", ", valuesClauses)}
+            ON CONFLICT(id) DO UPDATE SET
+                data = excluded.data,
+                updated_at = excluded.updated_at";
+    }
 }

@@ -118,6 +118,57 @@ internal sealed class DocumentStore : IDocumentStore
     }
 
     /// <inheritdoc />
+    public async Task<int> UpsertManyAsync<T>(IEnumerable<(string id, T data)> items)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        ArgumentNullException.ThrowIfNull(items);
+
+        var itemsList = items.ToList();
+        if (itemsList.Count == 0)
+        {
+            _logger.LogDebug("UpsertManyAsync called with empty collection, skipping");
+            return 0;
+        }
+
+        // Validate all items
+        for (int i = 0; i < itemsList.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(itemsList[i].id))
+            {
+                throw new ArgumentException($"ID at index {i} cannot be null or empty.", nameof(items));
+            }
+            if (itemsList[i].data == null)
+            {
+                throw new ArgumentException($"Data at index {i} cannot be null.", nameof(items));
+            }
+        }
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateBulkUpsertSql(tableName, itemsList.Count);
+
+        _logger.LogDebug("Bulk upserting {Count} documents into table {TableName}", itemsList.Count, tableName);
+
+        // Build dynamic parameters object
+        var parameters = new DynamicParameters();
+        for (int i = 0; i < itemsList.Count; i++)
+        {
+            var (id, data) = itemsList[i];
+            var json = _jsonSerializer.Serialize(data);
+            parameters.Add($"Id{i}", id);
+            parameters.Add($"Data{i}", json);
+        }
+
+        var affectedRows = await _connection.ExecuteAsync(sql, parameters);
+
+        _logger.LogInformation("Bulk upserted {Count} documents into table {TableName}, affected rows: {AffectedRows}",
+            itemsList.Count, tableName, affectedRows);
+
+        return affectedRows;
+    }
+
+    /// <inheritdoc />
     public async Task<T?> GetAsync<T>(string id)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

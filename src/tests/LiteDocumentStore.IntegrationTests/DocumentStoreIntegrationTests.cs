@@ -116,6 +116,107 @@ public class DocumentStoreIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task UpsertManyAsync_InsertsMultipleRecords()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        var items = new[]
+        {
+            ("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" }),
+            ("p2", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" }),
+            ("p3", new Person { Name = "Charlie", Age = 35, Email = "charlie@example.com" })
+        };
+
+        // Act
+        var affectedRows = await _store.UpsertManyAsync(items);
+
+        // Assert
+        Assert.True(affectedRows > 0);
+        var all = (await _store.GetAllAsync<Person>()).ToList();
+        Assert.Equal(3, all.Count);
+        Assert.Contains(all, p => p.Name == "Alice");
+        Assert.Contains(all, p => p.Name == "Bob");
+        Assert.Contains(all, p => p.Name == "Charlie");
+    }
+
+    [Fact]
+    public async Task UpsertManyAsync_UpdatesExistingRecords()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        await _store.UpsertAsync("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" });
+        await _store.UpsertAsync("p2", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" });
+
+        var updates = new[]
+        {
+            ("p1", new Person { Name = "Alice Updated", Age = 26, Email = "alice.new@example.com" }),
+            ("p2", new Person { Name = "Bob Updated", Age = 31, Email = "bob.new@example.com" })
+        };
+
+        // Act
+        var affectedRows = await _store.UpsertManyAsync(updates);
+
+        // Assert
+        Assert.True(affectedRows > 0);
+        var alice = await _store.GetAsync<Person>("p1");
+        var bob = await _store.GetAsync<Person>("p2");
+        Assert.Equal("Alice Updated", alice?.Name);
+        Assert.Equal(26, alice?.Age);
+        Assert.Equal("Bob Updated", bob?.Name);
+        Assert.Equal(31, bob?.Age);
+    }
+
+    [Fact]
+    public async Task UpsertManyAsync_HandlesEmptyCollection()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        var items = Array.Empty<(string, Person)>();
+
+        // Act
+        var affectedRows = await _store.UpsertManyAsync(items);
+
+        // Assert
+        Assert.Equal(0, affectedRows);
+    }
+
+    [Fact]
+    public async Task UpsertManyAsync_ThrowsOnNullId()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        var items = new[]
+        {
+            ("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" }),
+            ("", new Person { Name = "Bob", Age = 30, Email = "bob@example.com" })
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await _store.UpsertManyAsync(items);
+        });
+    }
+
+    [Fact]
+    public async Task UpsertManyAsync_ThrowsOnNullData()
+    {
+        // Arrange
+        await _store.CreateTableAsync<Person>();
+        var items = new[]
+        {
+            ("p1", new Person { Name = "Alice", Age = 25, Email = "alice@example.com" }),
+            ("p2", (Person)null!)
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            await _store.UpsertManyAsync(items);
+        });
+    }
+
+    [Fact]
     public async Task GetAsync_ReturnsNull_WhenRecordNotFound()
     {
         // Arrange

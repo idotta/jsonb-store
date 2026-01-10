@@ -28,6 +28,15 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     Task<int> UpsertAsync<T>(string id, T data);
 
     /// <summary>
+    /// Inserts or updates multiple JSON objects in the document store using a single SQL statement.
+    /// This is more efficient than calling UpsertAsync multiple times.
+    /// </summary>
+    /// <typeparam name="T">Type of the objects to store (also used as table name)</typeparam>
+    /// <param name="items">Collection of (id, data) tuples to upsert</param>
+    /// <returns>The total number of rows affected by the operation</returns>
+    Task<int> UpsertManyAsync<T>(IEnumerable<(string id, T data)> items);
+
+    /// <summary>
     /// Retrieves a JSON object by its ID from the document store.
     /// </summary>
     /// <typeparam name="T">Type of the object to retrieve (also used as table name)</typeparam>
