@@ -576,6 +576,57 @@ internal sealed class DocumentStore : IDocumentStore
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(
+        System.Linq.Expressions.Expression<Func<TSource, TResult>> selector)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        ArgumentNullException.ThrowIfNull(selector);
+
+        var tableName = _tableNamingConvention.GetTableName<TSource>();
+        var fieldSelections = ExpressionToJsonPath.ExtractFieldSelections(selector);
+        var sql = SqlGenerator.GenerateSelectFieldsSql(tableName, fieldSelections);
+
+        _logger.LogDebug("Selecting fields {Fields} from table {TableName}",
+            string.Join(", ", fieldSelections.Keys), tableName);
+
+        var results = await _connection.QueryAsync<TResult>(sql).ConfigureAwait(false);
+
+        _logger.LogDebug("Selected {Count} projected records from table {TableName}",
+            results.Count(), tableName);
+
+        return results;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<TResult>> SelectAsync<TSource, TResult>(
+        System.Linq.Expressions.Expression<Func<TSource, bool>> predicate,
+        System.Linq.Expressions.Expression<Func<TSource, TResult>> selector)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        ArgumentNullException.ThrowIfNull(predicate);
+        ArgumentNullException.ThrowIfNull(selector);
+
+        var tableName = _tableNamingConvention.GetTableName<TSource>();
+        var fieldSelections = ExpressionToJsonPath.ExtractFieldSelections(selector);
+        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate);
+        var sql = SqlGenerator.GenerateSelectFieldsWithWhereSql(tableName, fieldSelections, whereClause);
+
+        _logger.LogDebug("Selecting fields {Fields} from table {TableName} with WHERE clause: {WhereClause}",
+            string.Join(", ", fieldSelections.Keys), tableName, whereClause);
+
+        var results = await _connection.QueryAsync<TResult>(sql, parameters).ConfigureAwait(false);
+
+        _logger.LogDebug("Selected {Count} projected records from table {TableName}",
+            results.Count(), tableName);
+
+        return results;
+    }
+
+    /// <inheritdoc />
     public async Task<bool> IsHealthyAsync()
     {
         try

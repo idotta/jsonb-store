@@ -299,4 +299,80 @@ internal static class ExpressionToJsonPath
         // Convert PascalCase to camelCase (FirstName -> firstName)
         return char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
     }
+
+    /// <summary>
+    /// Extracts field selections from a projection expression.
+    /// Supports object initializer syntax: x => new DTO { Name = x.Name, Email = x.Email }
+    /// </summary>
+    /// <typeparam name="TSource">The source type</typeparam>
+    /// <typeparam name="TResult">The result type</typeparam>
+    /// <param name="selector">The projection expression</param>
+    /// <returns>Dictionary mapping result property names to JSON paths</returns>
+    public static Dictionary<string, string> ExtractFieldSelections<TSource, TResult>(
+        Expression<Func<TSource, TResult>> selector)
+    {
+        ArgumentNullException.ThrowIfNull(selector);
+
+        var body = selector.Body;
+
+        // Handle boxing conversions
+        if (body is UnaryExpression { NodeType: ExpressionType.Convert } unary)
+        {
+            body = unary.Operand;
+        }
+
+        // Support MemberInitExpression: new DTO { Name = x.Name, Email = x.Email }
+        if (body is MemberInitExpression memberInit)
+        {
+            return ExtractFromMemberInit(memberInit);
+        }
+
+        // Support NewExpression: new { x.Name, x.Email } (anonymous types)
+        if (body is NewExpression newExpr)
+        {
+            return ExtractFromNewExpression(newExpr);
+        }
+
+        throw new NotSupportedException(
+            "Only member initialization (new DTO { Name = x.Name }) and anonymous type creation (new { x.Name }) are supported for projection");
+    }
+
+    private static Dictionary<string, string> ExtractFromMemberInit(MemberInitExpression memberInit)
+    {
+        var selections = new Dictionary<string, string>();
+
+        foreach (var binding in memberInit.Bindings)
+        {
+            if (binding is not MemberAssignment assignment)
+            {
+                throw new NotSupportedException($"Only member assignments are supported in projections");
+            }
+
+            var propertyName = assignment.Member.Name;
+            var jsonPath = TranslateToJsonPath(assignment.Expression);
+            selections[propertyName] = jsonPath;
+        }
+
+        return selections;
+    }
+
+    private static Dictionary<string, string> ExtractFromNewExpression(NewExpression newExpr)
+    {
+        var selections = new Dictionary<string, string>();
+
+        // Anonymous types have both Arguments and Members
+        if (newExpr.Members == null || newExpr.Members.Count != newExpr.Arguments.Count)
+        {
+            throw new NotSupportedException("Constructor expression must have matching members and arguments");
+        }
+
+        for (int i = 0; i < newExpr.Members.Count; i++)
+        {
+            var propertyName = newExpr.Members[i].Name;
+            var jsonPath = TranslateToJsonPath(newExpr.Arguments[i]);
+            selections[propertyName] = jsonPath;
+        }
+
+        return selections;
+    }
 }

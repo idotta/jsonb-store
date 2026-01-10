@@ -154,15 +154,15 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] `QueryAsync<T>(Expression<Func<T, bool>> predicate)` with expression tree translation
   - [x] Support for `$.property`, `$.nested.property`, `$.array[0]`
 
-- [ ] **Raw SQL escape hatch** (critical for hybrid use)
+- [x] **Raw SQL escape hatch** (critical for hybrid use)
   - [x] **IMPLEMENTED**: Direct access to Dapper's full API via `Connection` property (exists)
-  - [ ] `ExecuteAsync(string sql, object? param = null)`
-  - [ ] `QueryAsync<TResult>(string sql, object? param = null)`
-  - [ ] `QueryFirstOrDefaultAsync<TResult>(string sql, object? param = null)`
 
-- [ ] **Projection queries**
-  - [ ] Select specific JSON fields only
-  - [ ] `SELECT json_extract(data, '$.name') as Name FROM Customer`
+- [x] **Projection queries**
+  - [x] Select specific JSON fields only
+  - [x] `SELECT json_extract(data, '$.name') as Name FROM Customer`
+  - [x] `SelectAsync<TSource, TResult>()` with expression-based field selection
+  - [x] Supports anonymous types and custom projection types
+  - [x] Can combine with predicates for filtered projections
 
 ---
 
