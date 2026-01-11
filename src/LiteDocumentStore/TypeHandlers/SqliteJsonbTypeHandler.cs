@@ -1,6 +1,7 @@
 using Dapper;
 using System.Data;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LiteDocumentStore;
 
@@ -11,6 +12,12 @@ namespace LiteDocumentStore;
 /// <typeparam name="T">The type of object to serialize/deserialize</typeparam>
 public sealed class SqliteJsonbTypeHandler<T> : SqlMapper.TypeHandler<T>
 {
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNameCaseInsensitive = false,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     /// <summary>
     /// Serializes a typed object to JSONB for storage in the database.
     /// </summary>
@@ -18,8 +25,15 @@ public sealed class SqliteJsonbTypeHandler<T> : SqlMapper.TypeHandler<T>
     /// <param name="value">The value to serialize</param>
     public override void SetValue(IDbDataParameter parameter, T? value)
     {
-        // SQLite will convert JSON text → JSONB automatically
-        parameter.Value = JsonSerializer.SerializeToUtf8Bytes(value);
+        if (value is null)
+        {
+            parameter.Value = DBNull.Value;
+        }
+        else
+        {
+            // SerializeToUtf8Bytes is faster than Serialize(string)
+            parameter.Value = JsonSerializer.SerializeToUtf8Bytes(value, Options);
+        }
         parameter.DbType = DbType.Binary;
     }
 
@@ -29,10 +43,11 @@ public sealed class SqliteJsonbTypeHandler<T> : SqlMapper.TypeHandler<T>
     /// <param name="value">The JSONB value from the database</param>
     /// <returns>The deserialized object</returns>
     /// <exception cref="DataException">Thrown when the JSON value cannot be parsed</exception>
-    public override T Parse(object value)
+    public override T? Parse(object value)
     {
         return value switch
         {
+            null or DBNull => default,
             byte[] bytes => JsonSerializer.Deserialize<T>(bytes)!,
             string json => JsonSerializer.Deserialize<T>(json)!,
             _ => throw new DataException($"Unsupported JSON value: {value.GetType()}")
