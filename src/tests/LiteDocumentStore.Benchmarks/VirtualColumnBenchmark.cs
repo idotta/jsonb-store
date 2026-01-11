@@ -240,7 +240,7 @@ public class VirtualColumnBenchmark
     {
         // Create a fresh database for this test
         var tempDb = "benchmark_temp.db";
-        
+
         var services = new ServiceCollection();
         services.AddLiteDocumentStore(options =>
         {
@@ -250,9 +250,9 @@ public class VirtualColumnBenchmark
 
         using var serviceProvider = services.BuildServiceProvider();
         await using var store = serviceProvider.GetRequiredService<IDocumentStore>();
-        
+
         await store.CreateTableAsync<Product>();
-        
+
         // Insert a few documents
         for (int i = 0; i < 1000; i++)
         {
@@ -263,18 +263,18 @@ public class VirtualColumnBenchmark
                 Price = 10.0m + i
             });
         }
-        
+
         // Measure adding virtual column
         await store.AddVirtualColumnAsync<Product>(p => p.Category, "category", createIndex: true);
 
         // Proper cleanup: dispose resources and clear connection pool
         await store.DisposeAsync();
         serviceProvider.Dispose();
-        
+
         SqliteConnection.ClearAllPools();
         GC.Collect();
         GC.WaitForPendingFinalizers();
-        
+
         // Cleanup database file
         if (File.Exists(tempDb))
         {

@@ -112,7 +112,7 @@ internal sealed partial class VirtualColumnCache
 
         // Get the table SQL to parse generated column expressions
         var tables = await introspector.GetTablesAsync().ConfigureAwait(false);
-        var tableInfo = tables.FirstOrDefault(t => 
+        var tableInfo = tables.FirstOrDefault(t =>
             string.Equals(t.Name, tableName, StringComparison.OrdinalIgnoreCase));
 
         if (tableInfo?.Sql == null)
