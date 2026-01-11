@@ -36,6 +36,7 @@ src/
 └── tests/
     ├── LiteDocumentStore.UnitTests/      # Unit tests (mocked)
     └── LiteDocumentStore.IntegrationTests/ # Integration tests (real SQLite)
+    └── LiteDocumentStore.Benchmarks/ # Benchmark tests
 ```
 
 ## When Modifying This Project
