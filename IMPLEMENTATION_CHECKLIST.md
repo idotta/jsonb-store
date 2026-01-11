@@ -38,7 +38,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 - [x] **Define interfaces for extensibility**
   - [x] `IDocumentStore` - Generic document store contract (formerly `IRepository`)
-  - [x] `IJsonSerializer` - Pluggable JSON serialization (System.Text.Json, Newtonsoft, etc.)
+  - [x] ~~`IJsonSerializer`~~ - **REMOVED**: Replaced with fixed, optimized `JsonHelper` for performance
   - [x] `IConnectionFactory` - Connection lifecycle management
   - [x] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
   - [x] **NEW**: `IDocumentStoreFactory` - Factory for creating configured document stores
@@ -66,7 +66,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 - [x] **Refactor existing `Repository.cs`**
   - [x] Rename to `DocumentStore` supporting `IDocumentStore`
   - [x] Decouple connection lifecycle (doesn't own connection)
-  - [x] Replace direct `System.Text.Json` calls with `IJsonSerializer`
+  - [x] ~~Replace direct `System.Text.Json` calls with `IJsonSerializer`~~ - **CHANGED**: Use fixed `JsonHelper` with optimized options
   - [x] Replace hardcoded `GetTableName<T>()` with `ITableNamingConvention`
   - [x] Accept `SqliteConnection` in constructor
   - [x] Use `IConnectionFactory` for creation (via DI)
@@ -76,6 +76,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: Add configurable connection ownership (`ownsConnection` parameter)
   - [x] **NEW**: Implement `ExecuteInTransactionAsync` overloads for batch operations
   - [x] **NEW**: Internal implementation with proper disposal pattern
+  - [x] **NEW**: Optimized serialization using `SerializeToUtf8Bytes` for byte[] instead of string
 
 ---
 
@@ -233,9 +234,10 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ## 10. Type Handler System
 
-- [ ] **Improve `SqliteJsonbTypeHandler<T>`**
-  - [ ] Make JSON serializer injectable
-  - [ ] Handle `null` values explicitly
+- [x] **Improve `SqliteJsonbTypeHandler<T>`**
+  - [x] ~~Make JSON serializer injectable~~ - **CHANGED**: Uses fixed `JsonHelper` for consistent performance
+  - [x] Handle `null` values explicitly
+  - [x] **NEW**: Integrated with optimized `JsonHelper` using `SerializeToUtf8Bytes`
 
 - [ ] **Auto-registration**
   - [ ] Automatic type handler registration on first use

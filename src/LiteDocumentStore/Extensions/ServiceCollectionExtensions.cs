@@ -61,13 +61,11 @@ public static class ServiceCollectionExtensions
 
         // Register core dependencies as singletons (stateless, reusable)
         services.TryAddSingleton<IConnectionFactory, DefaultConnectionFactory>();
-        services.TryAddSingleton<IJsonSerializer, SystemTextJsonSerializer>();
         services.TryAddSingleton<ITableNamingConvention, DefaultTableNamingConvention>();
 
         // Register the document store factory
         services.TryAddSingleton<IDocumentStoreFactory>(sp => new DocumentStoreFactory(
             sp.GetRequiredService<IConnectionFactory>(),
-            sp.GetRequiredService<IJsonSerializer>(),
             sp.GetRequiredService<ITableNamingConvention>(),
             sp.GetService<ILoggerFactory>()));
 
@@ -127,13 +125,11 @@ public static class ServiceCollectionExtensions
 
         // Register core dependencies as singletons (stateless, reusable)
         services.TryAddSingleton<IConnectionFactory, DefaultConnectionFactory>();
-        services.TryAddSingleton<IJsonSerializer, SystemTextJsonSerializer>();
         services.TryAddSingleton<ITableNamingConvention, DefaultTableNamingConvention>();
 
         // Register the document store factory (shared across all keyed stores)
         services.TryAddSingleton<IDocumentStoreFactory>(sp => new DocumentStoreFactory(
             sp.GetRequiredService<IConnectionFactory>(),
-            sp.GetRequiredService<IJsonSerializer>(),
             sp.GetRequiredService<ITableNamingConvention>(),
             sp.GetService<ILoggerFactory>()));
 

@@ -170,17 +170,6 @@ public sealed class DocumentStoreOptionsBuilder
     }
 
     /// <summary>
-    /// Sets the JSON serializer.
-    /// </summary>
-    /// <param name="serializer">The JSON serializer to use</param>
-    /// <returns>This builder for method chaining</returns>
-    public DocumentStoreOptionsBuilder WithJsonSerializer(IJsonSerializer serializer)
-    {
-        _options.JsonSerializer = serializer;
-        return this;
-    }
-
-    /// <summary>
     /// Adds a custom PRAGMA statement to execute on connection open.
     /// </summary>
     /// <param name="pragma">The PRAGMA statement (e.g., "PRAGMA temp_store = MEMORY")</param>

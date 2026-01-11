@@ -59,12 +59,6 @@ public sealed class DocumentStoreOptions
     public ITableNamingConvention? TableNamingConvention { get; set; }
 
     /// <summary>
-    /// Gets or sets the JSON serializer to use.
-    /// If null, uses System.Text.Json with default settings.
-    /// </summary>
-    public IJsonSerializer? JsonSerializer { get; set; }
-
-    /// <summary>
     /// Gets or sets additional PRAGMA statements to execute on connection open.
     /// Useful for custom SQLite configuration.
     /// </summary>
@@ -167,7 +161,6 @@ public sealed class DocumentStoreOptions
             BusyTimeoutMs = BusyTimeoutMs,
             EnableForeignKeys = EnableForeignKeys,
             TableNamingConvention = TableNamingConvention,
-            JsonSerializer = JsonSerializer,
             AdditionalPragmas = [.. AdditionalPragmas]
         };
     }

@@ -14,7 +14,7 @@ The goal is NOT an opaque document database. Users should seamlessly mix documen
 - **SQLite 3.45+** - Required for JSONB support
 - **Microsoft.Data.Sqlite** - SQLite provider
 - **Dapper** - Micro-ORM for minimal mapping overhead
-- **System.Text.Json** - Default JSON serializer
+- **System.Text.Json** - Fixed, optimized JSON serializer
 
 ## Key Architectural Principles
 
@@ -30,9 +30,9 @@ The goal is NOT an opaque document database. Users should seamlessly mix documen
 ```
 src/
 ├── LiteDocumentStore/                    # Main library
-│   ├── Repository.cs              # Core repository implementation
+│   ├── DocumentStore.cs           # Core repository implementation
 │   ├── SqliteJsonbTypeHandler.cs  # Dapper type handler for JSONB
-│   └── JsonTypeHandler.cs         # Alternative type handler
+│   └── JsonHelper.cs              # Optimized JSON serialization
 └── tests/
     ├── LiteDocumentStore.UnitTests/      # Unit tests (mocked)
     └── LiteDocumentStore.IntegrationTests/ # Integration tests (real SQLite)

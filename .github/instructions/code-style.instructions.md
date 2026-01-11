@@ -14,8 +14,8 @@
 
 ```csharp
 // Classes, interfaces, methods, properties: PascalCase
-public class Repository { }
-public interface IJsonSerializer { }
+public class DocumentStore { }
+public interface IDocumentStore { }
 public async Task<T?> GetAsync<T>(string id) { }
 
 // Private fields: _camelCase with underscore prefix
