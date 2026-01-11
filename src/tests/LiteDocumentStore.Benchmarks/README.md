@@ -14,8 +14,14 @@ dotnet run -c Release
 ### Run Specific Benchmark
 
 ```bash
-# Run only projection query benchmarks
+# Run comparison benchmarks (LiteDocumentStore vs Dapper vs LiteDB)
+dotnet run -c Release --filter *Comparison*
+
+# Run projection query benchmarks
 dotnet run -c Release --filter *ProjectionQuery*
+
+# Run virtual column benchmarks
+dotnet run -c Release --filter *VirtualColumn*
 ```
 
 ### Generate Reports
@@ -25,7 +31,31 @@ BenchmarkDotNet automatically generates reports in `BenchmarkDotNet.Artifacts/re
 - CSV files for importing into spreadsheets
 - Markdown summary tables
 
-## Projection Query Benchmark
+## Available Benchmarks
+
+### 1. Comparison Benchmark (NEW)
+
+**Purpose**: Comprehensive comparison of LiteDocumentStore vs Raw Dapper vs LiteDB across all core operations.
+
+**Operations Tested**:
+- **Single Insert**: Individual document upsert operations
+- **Bulk Insert**: Batch upsert of 100 documents
+- **Query By ID**: Retrieve document by primary key
+- **Full Table Scan**: Retrieve all documents
+- **Query with Filter**: Retrieve documents matching criteria (e.g., by category)
+- **Delete**: Remove document by ID
+
+**Test Data**:
+- Realistic document structure with nested objects, arrays, and metadata
+- 1,000 documents for scan operations
+- Multiple document sizes tested
+
+**What to Look For**:
+- LiteDocumentStore should be competitive with raw Dapper (within 5-10% overhead for abstraction)
+- Both SQLite-based solutions should significantly outperform LiteDB for bulk operations
+- LiteDB may be faster for single operations due to less serialization overhead
+
+### 2. Projection Query Benchmark
 
 **Purpose**: Validates the claim that projection queries are 50-70% faster and use 80-90% less memory than retrieving full documents.
 

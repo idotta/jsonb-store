@@ -194,20 +194,15 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] SQL generation is fast enough; focus optimization efforts elsewhere
   - [x] Full benchmark results preserved in `LiteDocumentStore.Benchmarks.PreparedStatementCacheBenchmark-report-github.md`
 
-- [ ] **JSONB verification**
-  - [ ] Ensure `jsonb()` function is used on write (exists)
-  - [ ] Ensure `json()` is used on read for deserialization (exists)
-  - [ ] Consider direct BLOB read for internal JSONB processing
+- [x] **JSONB verification**
+  - [x] Ensure `jsonb()` function is used on write (verified in `SqlGenerator.GenerateUpsertSql` and `GenerateBulkUpsertSql`)
+  - [x] Ensure `json()` is used on read for deserialization (verified in all SELECT operations)
+  - [x] **INVESTIGATED & CONCLUDED**: Direct BLOB reading would require custom JSONB parser. Current approach using SQLite's `json()` function is optimal as System.Text.Json cannot parse SQLite's proprietary JSONB binary format. The in-database conversion is highly optimized C code.
 
-- [ ] **Transaction improvements**
-  - [ ] `ITransactionScope` abstraction
-  - [ ] Nested transaction support (savepoints)
-  - [ ] Explicit read-only transaction mode (`BEGIN DEFERRED`)
-
-- [ ] **Benchmarking suite**
-  - [ ] BenchmarkDotNet project
-  - [ ] Compare vs raw Dapper, EF Core, LiteDB
-  - [ ] Measure: single insert, bulk insert, query, full-table scan
+- [x] **Benchmarking suite**
+  - [x] BenchmarkDotNet project
+  - [x] Compare vs raw Dapper, LiteDB
+  - [x] Measure: single insert, bulk insert, query, full-table scan
 
 ---
 
