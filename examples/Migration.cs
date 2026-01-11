@@ -151,7 +151,7 @@ Console.WriteLine($"\nTables ({tables.Count()}):");
 foreach (var table in tables)
 {
     Console.WriteLine($"  • {table.Name}");
-    
+
     // Show columns for each table
     var columns = await introspector.GetColumnsAsync(table.Name);
     foreach (var col in columns)

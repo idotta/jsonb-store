@@ -58,7 +58,7 @@ await store.ExecuteInTransactionAsync(async () =>
             3 => "Books",
             _ => "Accessories"
         };
-        
+
         await store.UpsertAsync(
             $"p{i}",
             new Product(

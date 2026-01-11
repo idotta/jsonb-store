@@ -160,9 +160,9 @@ try
         // These will succeed within the transaction
         await store.UpsertAsync("c4", new Customer("c4", "David", "david@example.com", true));
         await store.UpsertAsync("c5", new Customer("c5", "Eve", "eve@example.com", true));
-        
+
         Console.WriteLine("  ↳ Added 2 customers in transaction...");
-        
+
         // This will throw an exception
         throw new InvalidOperationException("Simulated business logic error!");
     });
@@ -192,13 +192,13 @@ await store.ExecuteInTransactionAsync(async (tx) =>
     // Insert via document store
     await store.UpsertAsync("c6", new Customer("c6", "Frank", "frank@example.com", true));
     await store.UpsertAsync("c7", new Customer("c7", "Grace", "grace@example.com", false));
-    
+
     // Use transaction for raw SQL in the same transaction
     await store.Connection.ExecuteAsync(
         "UPDATE Customer SET data = jsonb_set(data, '$.name', json('\"Frank Miller\"')) WHERE id = 'c6'",
         transaction: tx
     );
-    
+
     Console.WriteLine("  ↳ Mixed document operations and raw SQL in same transaction");
 });
 
@@ -226,14 +226,14 @@ await store.ExecuteInTransactionAsync(async () =>
         1499.99m,
         DateTime.UtcNow
     ));
-    
+
     // Update customer's active status
     var customer = await store.GetAsync<Customer>("c1");
     if (customer != null)
     {
         await store.UpsertAsync("c1", customer with { Active = false });
     }
-    
+
     // All changes committed atomically
     Console.WriteLine("✓ Order created and customer updated in single transaction");
 });

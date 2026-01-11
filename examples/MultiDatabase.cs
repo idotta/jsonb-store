@@ -33,9 +33,9 @@ services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Inf
 
 // Register the document store factory
 // The factory is registered as a singleton and reused to create multiple store instances
-services.AddLiteDocumentStore(new DocumentStoreOptions 
-{ 
-    ConnectionString = "Data Source=:memory:" 
+services.AddLiteDocumentStore(new DocumentStoreOptions
+{
+    ConnectionString = "Data Source=:memory:"
 });
 
 var serviceProvider = services.BuildServiceProvider();
