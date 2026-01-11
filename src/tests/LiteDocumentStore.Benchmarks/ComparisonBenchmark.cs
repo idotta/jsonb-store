@@ -60,9 +60,9 @@ public class ComparisonBenchmark
     {
         if (_documentStore != null)
             await _documentStore.DisposeAsync();
-        
+
         _serviceProvider?.Dispose();
-        
+
         _dapperConnection?.Dispose();
         _liteDb?.Dispose();
     }
@@ -146,7 +146,7 @@ public class ComparisonBenchmark
     {
         var doc = _testDocuments[index];
         var json = System.Text.Json.JsonSerializer.Serialize(doc, _jsonOptions);
-        
+
         var sql = "INSERT OR REPLACE INTO [TestDocument] (id, data) VALUES (@Id, jsonb(@Data))";
         await _dapperConnection.ExecuteAsync(sql, new { Id = doc.Id, Data = json });
     }
@@ -175,7 +175,7 @@ public class ComparisonBenchmark
     {
         // Take first 100 documents for bulk operation
         var batch = _testDocuments.Take(100).ToList();
-        
+
         using var transaction = _dapperConnection.BeginTransaction();
         try
         {
@@ -219,9 +219,9 @@ public class ComparisonBenchmark
     {
         var sql = "SELECT json(data) as data FROM [TestDocument] WHERE id = @Id";
         var json = await _dapperConnection.QuerySingleOrDefaultAsync<string>(sql, new { Id = id });
-        
-        return json != null 
-            ? System.Text.Json.JsonSerializer.Deserialize<TestDocument>(json, _jsonOptions) 
+
+        return json != null
+            ? System.Text.Json.JsonSerializer.Deserialize<TestDocument>(json, _jsonOptions)
             : null;
     }
 
@@ -247,11 +247,11 @@ public class ComparisonBenchmark
     {
         var sql = "SELECT json(data) as data FROM [TestDocument]";
         var jsonResults = await _dapperConnection.QueryAsync<string>(sql);
-        
-        var results = jsonResults.Select(json => 
+
+        var results = jsonResults.Select(json =>
             System.Text.Json.JsonSerializer.Deserialize<TestDocument>(json, _jsonOptions)!
         ).ToList();
-        
+
         return results.Count;
     }
 
@@ -278,13 +278,13 @@ public class ComparisonBenchmark
             SELECT json(data) as data 
             FROM [TestDocument] 
             WHERE json_extract(data, '$.Category') = @Category";
-        
+
         var jsonResults = await _dapperConnection.QueryAsync<string>(sql, new { Category = "Category 5" });
-        
-        var results = jsonResults.Select(json => 
+
+        var results = jsonResults.Select(json =>
             System.Text.Json.JsonSerializer.Deserialize<TestDocument>(json, _jsonOptions)!
         ).ToList();
-        
+
         return results.Count;
     }
 
