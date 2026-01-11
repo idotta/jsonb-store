@@ -38,7 +38,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 - [x] **Define interfaces for extensibility**
   - [x] `IDocumentStore` - Generic document store contract (formerly `IRepository`)
-  - [x] `IJsonSerializer` - Pluggable JSON serialization (System.Text.Json, Newtonsoft, etc.)
+  - [x] ~~`IJsonSerializer`~~ - **REMOVED**: Replaced with fixed, optimized `JsonHelper` for performance
   - [x] `IConnectionFactory` - Connection lifecycle management
   - [x] `ITableNamingConvention` - Customizable table naming (pluralization, snake_case, etc.)
   - [x] **NEW**: `IDocumentStoreFactory` - Factory for creating configured document stores
@@ -66,7 +66,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 - [x] **Refactor existing `Repository.cs`**
   - [x] Rename to `DocumentStore` supporting `IDocumentStore`
   - [x] Decouple connection lifecycle (doesn't own connection)
-  - [x] Replace direct `System.Text.Json` calls with `IJsonSerializer`
+  - [x] ~~Replace direct `System.Text.Json` calls with `IJsonSerializer`~~ - **CHANGED**: Use fixed `JsonHelper` with optimized options
   - [x] Replace hardcoded `GetTableName<T>()` with `ITableNamingConvention`
   - [x] Accept `SqliteConnection` in constructor
   - [x] Use `IConnectionFactory` for creation (via DI)
@@ -76,6 +76,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: Add configurable connection ownership (`ownsConnection` parameter)
   - [x] **NEW**: Implement `ExecuteInTransactionAsync` overloads for batch operations
   - [x] **NEW**: Internal implementation with proper disposal pattern
+  - [x] **NEW**: Optimized serialization using `SerializeToUtf8Bytes` for byte[] instead of string
 
 ---
 
@@ -204,6 +205,16 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] Compare vs raw Dapper, LiteDB
   - [x] Measure: single insert, bulk insert, query, full-table scan
 
+- [x] **Dapper type handlers**
+  - [x] **INVESTIGATED & REJECTED** (January 2026)
+  - [x] Created `SqliteJsonbTypeHandler<T>` and `TypeHandlerRegistry` for automatic type mapping
+  - [x] **Root cause**: System.Text.Json cannot parse SQLite's proprietary JSONB binary format
+  - [x] **Required pattern**: Must use SQLite's `json()` function to convert JSONB → JSON string first
+  - [x] Type handlers would receive raw JSONB blobs from `SELECT data FROM table` but can't deserialize them
+  - [x] **Conclusion**: Manual deserialization with `JsonHelper` after `json()` conversion is the only viable approach
+  - [x] Current pattern (`QueryAsync<string>` + `JsonHelper.Deserialize`) is explicit, clear, and works correctly
+  - [x] `SqliteJsonbTypeHandler<T>` kept for reference but not used in the codebase
+
 ---
 
 ## 8. Error Handling & Resilience
@@ -231,62 +242,42 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 10. Type Handler System
-
-- [ ] **Improve `SqliteJsonbTypeHandler<T>`**
-  - [ ] Make JSON serializer injectable
-  - [ ] Handle `null` values explicitly
-
-- [ ] **Auto-registration**
-  - [ ] Automatic type handler registration on first use
-  - [ ] Type handler cache to avoid re-registration
-
-- [ ] **Complex type support**
-  - [ ] Collections, dictionaries, nested objects
-  - [ ] Polymorphic serialization with type discriminator
-
----
-
-## 11. Testing Infrastructure
+## 10. Testing Infrastructure
 
 - [x] **Unit tests** (mock connection)
   - [x] Test all public API methods
   - [x] **NEW**: Connection ownership tests (ownsConnection parameter)
   - [x] **NEW**: Disposal pattern verification
   - [x] Edge cases: null, empty, special characters in ID
-  - [ ] Concurrency scenarios
+  - [x] Concurrency scenarios
 
 - [x] **Integration tests** (real SQLite)
   - [x] In-memory database for speed
   - [x] **NEW**: Full CRUD operation testing
   - [x] **NEW**: Transaction commit and rollback tests
   - [x] **NEW**: GetAllAsync, DeleteAsync verification
-  - [ ] File-based database for WAL testing
-  - [ ] Multi-connection concurrency tests
+  - [x] File-based database for WAL testing
+  - [x] Multi-connection concurrency tests
 
-- [ ] **Test helpers**
-  - [ ] `LiteDocumentStoreTestFixture` for easy test setup
-  - [ ] Database seeding utilities
+- [x] **Test helpers**
+  - [x] `LiteDocumentStoreTestFixture` for easy test setup
+  - [x] Database seeding utilities
 
 ---
 
-## 12. Documentation & Developer Experience
+## 11. Documentation & Developer Experience
 
 - [x] **XML documentation**
   - [x] All public APIs documented
   - [x] **NEW**: Comprehensive XML docs for all interfaces and public classes
   - [x] **NEW**: Parameter descriptions and return value documentation
   - [ ] Include examples in `<example>` tags
-  - [ ] Generate API reference site
 
 - [x] **README improvements**
   - [x] Quick start guide with code examples
   - [x] **NEW**: Features list with checkmarks
   - [x] **NEW**: JSONB benefits explained
   - [x] **NEW**: CI/CD badges
-  - [ ] Common patterns and recipes
-  - [ ] FAQ section
-  - [ ] Performance tuning guide
 
 - [ ] **Sample projects**
   - [ ] Console app example
@@ -294,7 +285,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 13. Packaging & Distribution
+## 12. Packaging & Distribution
 
 - [ ] **NuGet package**
   - [ ] Proper `.nuspec` or SDK-style properties
@@ -309,7 +300,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 14. Security Considerations
+## 13. Security Considerations
 
 - [ ] **SQL injection prevention**
   - [ ] All user-facing table names validated/sanitized

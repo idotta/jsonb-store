@@ -14,7 +14,6 @@ namespace LiteDocumentStore;
 internal sealed class DocumentStore : IDocumentStore
 {
     private readonly SqliteConnection _connection;
-    private readonly IJsonSerializer _jsonSerializer;
     private readonly ITableNamingConvention _tableNamingConvention;
     private readonly ILogger<DocumentStore> _logger;
     private readonly VirtualColumnCache _virtualColumnCache;
@@ -25,19 +24,16 @@ internal sealed class DocumentStore : IDocumentStore
     /// Initializes a new document store with the specified connection and dependencies.
     /// </summary>
     /// <param name="connection">The open SQLite connection</param>
-    /// <param name="jsonSerializer">JSON serializer implementation (defaults to SystemTextJsonSerializer)</param>
     /// <param name="tableNamingConvention">Table naming convention (defaults to DefaultTableNamingConvention)</param>
     /// <param name="logger">Logger for diagnostics (optional)</param>
     /// <param name="ownsConnection">Whether this store owns and should dispose the connection (default: false)</param>
     public DocumentStore(
         SqliteConnection connection,
-        IJsonSerializer? jsonSerializer = null,
         ITableNamingConvention? tableNamingConvention = null,
         ILogger<DocumentStore>? logger = null,
         bool ownsConnection = false)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-        _jsonSerializer = jsonSerializer ?? new SystemTextJsonSerializer();
         _tableNamingConvention = tableNamingConvention ?? new DefaultTableNamingConvention();
         _logger = logger ?? NullLogger<DocumentStore>.Instance;
         _virtualColumnCache = new VirtualColumnCache(connection);
@@ -103,7 +99,7 @@ internal sealed class DocumentStore : IDocumentStore
         ArgumentNullException.ThrowIfNull(data);
 
         var tableName = _tableNamingConvention.GetTableName<T>();
-        var json = _jsonSerializer.Serialize(data);
+        var jsonBytes = JsonHelper.SerializeToUtf8Bytes(data);
         var sql = SqlGenerator.GenerateUpsertSql(tableName);
 
         _logger.LogDebug("Upserting document {Id} into table {TableName}", id, tableName);
@@ -111,7 +107,7 @@ internal sealed class DocumentStore : IDocumentStore
         var affectedRows = await _connection.ExecuteAsync(sql, new
         {
             Id = id,
-            Data = json
+            Data = jsonBytes
         });
 
         _logger.LogDebug("Document {Id} upserted successfully in table {TableName}", id, tableName);
@@ -157,9 +153,9 @@ internal sealed class DocumentStore : IDocumentStore
         for (int i = 0; i < itemsList.Count; i++)
         {
             var (id, data) = itemsList[i];
-            var json = _jsonSerializer.Serialize(data);
+            var jsonBytes = JsonHelper.SerializeToUtf8Bytes(data);
             parameters.Add($"Id{i}", id);
-            parameters.Add($"Data{i}", json);
+            parameters.Add($"Data{i}", jsonBytes);
         }
 
         var affectedRows = await _connection.ExecuteAsync(sql, parameters);
@@ -194,7 +190,7 @@ internal sealed class DocumentStore : IDocumentStore
             return default;
         }
 
-        var result = _jsonSerializer.Deserialize<T>(json);
+        var result = JsonHelper.Deserialize<T>(json);
         _logger.LogDebug("Document {Id} retrieved successfully from table {TableName}", id, tableName);
         return result;
     }
@@ -215,7 +211,7 @@ internal sealed class DocumentStore : IDocumentStore
         var results = new List<T>();
         foreach (var json in jsonResults)
         {
-            var item = _jsonSerializer.Deserialize<T>(json);
+            var item = JsonHelper.Deserialize<T>(json);
             if (item != null)
             {
                 results.Add(item);
@@ -363,7 +359,7 @@ internal sealed class DocumentStore : IDocumentStore
 
         var jsonResults = await _connection.QueryAsync<string>(sql, new { Value = value }).ConfigureAwait(false);
         var documents = jsonResults
-            .Select(json => _jsonSerializer.Deserialize<T>(json))
+            .Select(json => JsonHelper.Deserialize<T>(json))
             .Where(doc => doc != null)
             .Select(doc => doc!)
             .ToList();
@@ -394,7 +390,7 @@ internal sealed class DocumentStore : IDocumentStore
 
         var jsonResults = await _connection.QueryAsync<string>(sql, parameters).ConfigureAwait(false);
         var documents = jsonResults
-            .Select(json => _jsonSerializer.Deserialize<T>(json))
+            .Select(json => JsonHelper.Deserialize<T>(json))
             .Where(doc => doc != null)
             .Select(doc => doc!)
             .ToList();
