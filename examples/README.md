@@ -200,6 +200,55 @@ Demonstrates how transaction batching dramatically improves performance for bulk
 
 ---
 
+### 8. [MultiDatabase.cs](MultiDatabase.cs)
+**Multiple databases with factory pattern** - Manage separate databases for tenants or domains
+
+Demonstrates using `IDocumentStoreFactory` to create and manage multiple independent database instances:
+- Creating the factory from DI container
+- Creating separate databases for different tenants (multi-tenant architecture)
+- Creating domain-separated databases (Products, Orders, Customers)
+- Each store manages its own connection and lifecycle
+- Different configuration per database (WAL mode, pragmas, etc.)
+- Proper cleanup and disposal of multiple stores
+
+**Use cases shown**:
+- Multi-tenant: Separate databases for US and EU customers
+- Domain separation: Products catalog vs. Orders transactions
+- Each database is completely isolated with its own connection
+
+**Perfect for**: Multi-tenant applications, microservices, domain-driven design, test isolation
+
+**Key concept**: The factory is stateless and registered as a singleton. It creates independent store instances on demand, each with its own configuration. This is the recommended pattern when you don't need DI to manage store injection.
+
+**Run time**: < 1 second
+
+---
+
+### 9. [MultiDatabaseKeyed.cs](MultiDatabaseKeyed.cs)
+**Multiple databases with keyed DI** - Type-safe dependency injection for multiple databases
+
+Demonstrates using keyed services (requires .NET 8+) to register and inject multiple database instances:
+- Registering multiple keyed stores with `AddKeyedLiteDocumentStore()`
+- Retrieving stores by key with `GetRequiredKeyedService<IDocumentStore>(key)`
+- Different service lifetimes per database (Singleton vs. Scoped)
+- Creating typed service classes that depend on specific keyed stores
+- Using `[FromKeyedServices]` attribute for constructor injection
+- Demonstrating lifetime differences across scopes
+
+**Architecture patterns**:
+- US and EU customer databases (regional separation)
+- Products catalog (singleton, shared across app)
+- Orders database (scoped, new instance per request)
+- Typed services (CustomerService, OrderService) with keyed dependencies
+
+**Perfect for**: Clean architecture, dependency injection, ASP.NET Core applications, testability
+
+**Key concept**: Keyed services let the DI container manage multiple store instances with type-safe injection. Use `[FromKeyedServices("key")]` in constructors to inject the right store. Singleton lifetime is best for long-lived stores, Scoped for per-request isolation.
+
+**Run time**: ~1 second
+
+---
+
 ## Example Structure
 
 Each example follows this pattern:
@@ -240,6 +289,8 @@ Each example follows this pattern:
 | ProjectionQuery.cs | Field selection | 1K customers | ~1-2s | `SelectAsync` |
 | IndexManagement.cs | Indexing | 5K customers | ~1-2s | `CreateIndexAsync`, `CreateCompositeIndexAsync` |
 | Migration.cs | Schema versioning | Small | ~1-2s | `MigrationRunner`, `SchemaIntrospector` |
+| MultiDatabase.cs | Factory pattern | Small | <1s | `IDocumentStoreFactory.Create` |
+| MultiDatabaseKeyed.cs | Keyed DI services | Small | ~1s | `AddKeyedLiteDocumentStore`, `[FromKeyedServices]` |
 
 ## Feedback
 

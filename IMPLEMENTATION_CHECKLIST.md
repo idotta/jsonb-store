@@ -271,7 +271,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] All public APIs documented
   - [x] **NEW**: Comprehensive XML docs for all interfaces and public classes
   - [x] **NEW**: Parameter descriptions and return value documentation
-  - [ ] Include examples in `<example>` tags
 
 - [x] **README improvements**
   - [x] Quick start guide with code examples
@@ -287,8 +286,8 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] IndexManagement.cs - Creating and using JSON path indexes
   - [x] Migration.cs - Schema versioning and evolution
   - [x] TransactionBatching.cs - Batch operations example
-  - [ ] MultiDatabase.cs - Multiple database instances with IDocumentStoreFactory
-  - [ ] MultiDatabaseKeyed.cs - Multiple database instances with keyed services
+  - [x] MultiDatabase.cs - Multiple database instances with IDocumentStoreFactory
+  - [x] MultiDatabaseKeyed.cs - Multiple database instances with keyed services
   - [x] examples/README.md - Documentation for all examples
 
 ---
