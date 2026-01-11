@@ -17,6 +17,7 @@ internal sealed class DocumentStore : IDocumentStore
     private readonly IJsonSerializer _jsonSerializer;
     private readonly ITableNamingConvention _tableNamingConvention;
     private readonly ILogger<DocumentStore> _logger;
+    private readonly VirtualColumnCache _virtualColumnCache;
     private readonly bool _ownsConnection;
     private bool _disposed;
 
@@ -39,6 +40,7 @@ internal sealed class DocumentStore : IDocumentStore
         _jsonSerializer = jsonSerializer ?? new SystemTextJsonSerializer();
         _tableNamingConvention = tableNamingConvention ?? new DefaultTableNamingConvention();
         _logger = logger ?? NullLogger<DocumentStore>.Instance;
+        _virtualColumnCache = new VirtualColumnCache(connection);
         _ownsConnection = ownsConnection;
     }
 
@@ -381,8 +383,11 @@ internal sealed class DocumentStore : IDocumentStore
 
         var tableName = _tableNamingConvention.GetTableName<T>();
 
+        // Get virtual columns for this table to enable index usage
+        var virtualColumns = await _virtualColumnCache.GetAsync(tableName).ConfigureAwait(false);
+
         // Translate the expression to SQL WHERE clause
-        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate);
+        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate, virtualColumns);
         var sql = SqlGenerator.GenerateQueryWithWhereSql(tableName, whereClause);
 
         _logger.LogDebug("Querying table {TableName} with WHERE clause: {WhereClause}", tableName, whereClause);
@@ -617,6 +622,9 @@ internal sealed class DocumentStore : IDocumentStore
                 columnName, tableName, pathString);
         }
 
+        // Register the virtual column in cache (whether newly created or already existing)
+        _virtualColumnCache.Register(tableName, new VirtualColumnInfo(pathString, columnName, columnType));
+
         // Create index on the virtual column if requested
         if (createIndex)
         {
@@ -679,7 +687,11 @@ internal sealed class DocumentStore : IDocumentStore
 
         var tableName = _tableNamingConvention.GetTableName<TSource>();
         var fieldSelections = ExpressionToJsonPath.ExtractFieldSelections(selector);
-        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate);
+
+        // Get virtual columns for this table to enable index usage
+        var virtualColumns = await _virtualColumnCache.GetAsync(tableName).ConfigureAwait(false);
+
+        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate, virtualColumns);
         var sql = SqlGenerator.GenerateSelectFieldsWithWhereSql(tableName, fieldSelections, whereClause);
 
         _logger.LogDebug("Selecting fields {Fields} from table {TableName} with WHERE clause: {WhereClause}",
