@@ -43,7 +43,7 @@ public class ProjectionQueryBenchmark
                 Email = $"user{i}@example.com",
                 Description = $"This is a detailed description for document {i} with lots of text to make it more realistic and increase the payload size significantly.",
                 Category = $"Category {i % 10}",
-                Tags = new List<string> { $"tag{i}", $"tag{i + 1}", $"tag{i + 2}" },
+                Tags = [$"tag{i}", $"tag{i + 1}", $"tag{i + 2}"],
                 Metadata = new Dictionary<string, string>
                 {
                     ["CreatedBy"] = $"User {i % 100}",
@@ -78,7 +78,7 @@ public class ProjectionQueryBenchmark
                     TotalViews = i * 100,
                     UniqueVisitors = i * 50,
                     AvgTimeOnPage = TimeSpan.FromSeconds(i % 300),
-                    BounceRate = (i % 100) / 100.0
+                    BounceRate = i % 100 / 100.0
                 }
             };
 
@@ -170,10 +170,10 @@ public class LargeDocument
     public string Email { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public List<string> Tags { get; set; } = new();
-    public Dictionary<string, string> Metadata { get; set; } = new();
+    public List<string> Tags { get; set; } = [];
+    public Dictionary<string, string> Metadata { get; set; } = [];
     public ContentBlock Content { get; set; } = new();
-    public List<Attachment> Attachments { get; set; } = new();
+    public List<Attachment> Attachments { get; set; } = [];
     public TimestampInfo Timestamps { get; set; } = new();
     public Statistics Stats { get; set; } = new();
 }

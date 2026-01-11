@@ -11,7 +11,7 @@ public class ExpressionToJsonPathTests
         public string Email { get; set; } = "";
         public int Age { get; set; }
         public Address Address { get; set; } = new();
-        public List<string> Tags { get; set; } = new();
+        public List<string> Tags { get; set; } = [];
     }
 
     private class Address

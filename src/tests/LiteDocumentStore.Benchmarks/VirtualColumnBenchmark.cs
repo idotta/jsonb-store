@@ -71,11 +71,11 @@ public class VirtualColumnBenchmark
                 Stock = i % 1000,
                 Sku = $"SKU-{i:D6}",
                 IsActive = i % 3 != 0,
-                Tags = new List<string> { $"tag{i % 20}", $"tag{i % 30}" },
+                Tags = [$"tag{i % 20}", $"tag{i % 30}"],
                 Metadata = new ProductMetadata
                 {
                     Brand = $"Brand {i % 100}",
-                    Weight = 0.5 + (i % 50) * 0.1,
+                    Weight = 0.5 + i % 50 * 0.1,
                     Dimensions = $"{i % 10}x{i % 8}x{i % 5}",
                     Country = i % 2 == 0 ? "USA" : "Canada"
                 }
@@ -106,16 +106,10 @@ public class VirtualColumnBenchmark
     [GlobalCleanup]
     public async Task Cleanup()
     {
-        if (_storeWithVirtual != null)
-        {
-            await _storeWithVirtual.DisposeAsync();
-        }
-        if (_storeWithoutVirtual != null)
-        {
-            await _storeWithoutVirtual.DisposeAsync();
-        }
-        _serviceProviderWithVirtual?.Dispose();
-        _serviceProviderWithoutVirtual?.Dispose();
+        await _storeWithVirtual.DisposeAsync();
+        await _storeWithoutVirtual.DisposeAsync();
+        _serviceProviderWithVirtual.Dispose();
+        _serviceProviderWithoutVirtual.Dispose();
 
         // Clear SQLite connection pools and force GC to release connections
         SqliteConnection.ClearAllPools();
@@ -294,7 +288,7 @@ public class Product
     public int Stock { get; set; }
     public string Sku { get; set; } = string.Empty;
     public bool IsActive { get; set; }
-    public List<string> Tags { get; set; } = new();
+    public List<string> Tags { get; set; } = [];
     public ProductMetadata Metadata { get; set; } = new();
 }
 
