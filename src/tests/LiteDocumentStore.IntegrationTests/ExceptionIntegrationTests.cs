@@ -15,7 +15,7 @@ public class ExceptionIntegrationTests : IDisposable
     {
         _connection = new SqliteConnection("Data Source=:memory:");
         _connection.Open();
-        
+
         // Create store without owning connection (we manage it)
         _store = new DocumentStore(_connection);
     }
@@ -49,7 +49,7 @@ public class ExceptionIntegrationTests : IDisposable
     {
         // Arrange
         await _store.CreateTableAsync<StrictModel>();
-        
+
         // Manually insert invalid JSON
         await _connection.ExecuteAsync(
             "INSERT INTO [StrictModel] (id, data) VALUES (@Id, jsonb(@Data))",
