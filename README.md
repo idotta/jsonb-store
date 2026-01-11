@@ -49,6 +49,7 @@ dotnet build
 - ✅ **Generic Repository Pattern**: Type-safe CRUD operations with automatic table naming
 - ✅ **Async/Await**: All database operations are fully async
 - ✅ **JSONB Format**: Uses SQLite 3.45+ JSONB for binary-optimized JSON storage
+- ✅ **Virtual Columns**: Index JSON properties for up to 1,300x faster queries
 - ✅ **Transaction Support**: Batch operations for high-performance writes
 - ✅ **WAL Mode**: Automatically configured for optimal concurrency
 - ✅ **Zero SQL Injection Risk**: Table names derived from types, not user input

@@ -739,8 +739,9 @@ public class DocumentStoreIntegrationTests : IDisposable
         await _store.CreateIndexAsync<Person>(p => p.Email);
 
         // Assert - Verify the index exists and can be used
+        // Note: JSON path uses PascalCase to match default System.Text.Json serialization
         var queryPlan = await _connection.QueryAsync<dynamic>(
-            "EXPLAIN QUERY PLAN SELECT json(data) FROM Person WHERE json_extract(data, '$.email') = 'person50@example.com'");
+            "EXPLAIN QUERY PLAN SELECT json(data) FROM Person WHERE json_extract(data, '$.Email') = 'person50@example.com'");
 
         // The query plan should mention the index
         var planText = string.Join(" ", queryPlan.Select(p => p.detail));

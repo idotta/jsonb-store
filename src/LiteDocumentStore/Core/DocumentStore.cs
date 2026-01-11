@@ -17,6 +17,7 @@ internal sealed class DocumentStore : IDocumentStore
     private readonly IJsonSerializer _jsonSerializer;
     private readonly ITableNamingConvention _tableNamingConvention;
     private readonly ILogger<DocumentStore> _logger;
+    private readonly VirtualColumnCache _virtualColumnCache;
     private readonly bool _ownsConnection;
     private bool _disposed;
 
@@ -39,6 +40,7 @@ internal sealed class DocumentStore : IDocumentStore
         _jsonSerializer = jsonSerializer ?? new SystemTextJsonSerializer();
         _tableNamingConvention = tableNamingConvention ?? new DefaultTableNamingConvention();
         _logger = logger ?? NullLogger<DocumentStore>.Instance;
+        _virtualColumnCache = new VirtualColumnCache(connection);
         _ownsConnection = ownsConnection;
     }
 
@@ -381,8 +383,11 @@ internal sealed class DocumentStore : IDocumentStore
 
         var tableName = _tableNamingConvention.GetTableName<T>();
 
+        // Get virtual columns for this table to enable index usage
+        var virtualColumns = await _virtualColumnCache.GetAsync(tableName).ConfigureAwait(false);
+
         // Translate the expression to SQL WHERE clause
-        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate);
+        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate, virtualColumns);
         var sql = SqlGenerator.GenerateQueryWithWhereSql(tableName, whereClause);
 
         _logger.LogDebug("Querying table {TableName} with WHERE clause: {WhereClause}", tableName, whereClause);
@@ -511,6 +516,7 @@ internal sealed class DocumentStore : IDocumentStore
     /// <summary>
     /// Extracts the JSON path from a lambda expression.
     /// Supports simple property access (e.g., x => x.Email) and nested properties (e.g., x => x.Address.City).
+    /// Uses property names as-is to match the default System.Text.Json serialization (PascalCase).
     /// </summary>
     private static string ExtractJsonPath<T>(System.Linq.Expressions.Expression<Func<T, object>> expression)
     {
@@ -538,8 +544,8 @@ internal sealed class DocumentStore : IDocumentStore
                 nameof(expression));
         }
 
-        // Convert property names to JSON path format (camelCase convention)
-        var jsonPath = "$." + string.Join(".", members.Select(ToCamelCase));
+        // Use property names as-is to match default System.Text.Json serialization (PascalCase)
+        var jsonPath = "$." + string.Join(".", members);
         return jsonPath;
     }
 
@@ -573,6 +579,75 @@ internal sealed class DocumentStore : IDocumentStore
     {
         var pathsPart = string.Join("_", jsonPaths.Select(p => p.Replace("$.", "").Replace(".", "_")));
         return $"idx_{tableName}_composite_{pathsPart}";
+    }
+
+    /// <inheritdoc />
+    public async Task AddVirtualColumnAsync<T>(
+        System.Linq.Expressions.Expression<Func<T, object>> jsonPath,
+        string columnName,
+        bool createIndex = false,
+        string columnType = "TEXT")
+    {
+        ArgumentNullException.ThrowIfNull(jsonPath);
+
+        if (string.IsNullOrWhiteSpace(columnName))
+        {
+            throw new ArgumentException("Column name cannot be null or empty.", nameof(columnName));
+        }
+
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        EnsureConnectionOpen();
+
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var pathString = ExtractJsonPath(jsonPath);
+
+        _logger.LogDebug("Adding virtual column {ColumnName} to table {TableName} for path {JsonPath}",
+            columnName, tableName, pathString);
+
+        // Check if column already exists using SchemaIntrospector
+        var introspector = new SchemaIntrospector(_connection);
+        var columnExists = await introspector.ColumnExistsAsync(tableName, columnName).ConfigureAwait(false);
+
+        if (columnExists)
+        {
+            _logger.LogDebug("Column {ColumnName} already exists in table {TableName}, skipping creation",
+                columnName, tableName);
+        }
+        else
+        {
+            var addColumnSql = SqlGenerator.GenerateAddVirtualColumnSql(tableName, columnName, pathString, columnType);
+            await _connection.ExecuteAsync(addColumnSql).ConfigureAwait(false);
+
+            _logger.LogInformation("Virtual column {ColumnName} created successfully on table {TableName} for path {JsonPath}",
+                columnName, tableName, pathString);
+        }
+
+        // Register the virtual column in cache (whether newly created or already existing)
+        _virtualColumnCache.Register(tableName, new VirtualColumnInfo(pathString, columnName, columnType));
+
+        // Create index on the virtual column if requested
+        if (createIndex)
+        {
+            var indexName = $"idx_{tableName}_{columnName}";
+
+            // Check if index already exists
+            var indexExists = await _connection.QueryFirstOrDefaultAsync<int>(
+                SqlGenerator.GenerateCheckIndexExistsSql(),
+                new { IndexName = indexName }).ConfigureAwait(false);
+
+            if (indexExists > 0)
+            {
+                _logger.LogDebug("Index {IndexName} already exists, skipping creation", indexName);
+            }
+            else
+            {
+                var createIndexSql = SqlGenerator.GenerateCreateColumnIndexSql(tableName, indexName, columnName);
+                await _connection.ExecuteAsync(createIndexSql).ConfigureAwait(false);
+
+                _logger.LogInformation("Index {IndexName} created successfully on virtual column {ColumnName}",
+                    indexName, columnName);
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -612,7 +687,11 @@ internal sealed class DocumentStore : IDocumentStore
 
         var tableName = _tableNamingConvention.GetTableName<TSource>();
         var fieldSelections = ExpressionToJsonPath.ExtractFieldSelections(selector);
-        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate);
+
+        // Get virtual columns for this table to enable index usage
+        var virtualColumns = await _virtualColumnCache.GetAsync(tableName).ConfigureAwait(false);
+
+        var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate, virtualColumns);
         var sql = SqlGenerator.GenerateSelectFieldsWithWhereSql(tableName, fieldSelections, whereClause);
 
         _logger.LogDebug("Selecting fields {Fields} from table {TableName} with WHERE clause: {WhereClause}",

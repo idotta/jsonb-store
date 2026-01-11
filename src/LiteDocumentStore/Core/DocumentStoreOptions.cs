@@ -68,7 +68,7 @@ public sealed class DocumentStoreOptions
     /// Gets or sets additional PRAGMA statements to execute on connection open.
     /// Useful for custom SQLite configuration.
     /// </summary>
-    public List<string> AdditionalPragmas { get; set; } = new();
+    public List<string> AdditionalPragmas { get; set; } = [];
 
     /// <summary>
     /// Creates a new instance of DocumentStoreOptions with default settings.

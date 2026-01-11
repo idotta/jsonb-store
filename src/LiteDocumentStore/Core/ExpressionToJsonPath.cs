@@ -38,17 +38,21 @@ internal static class ExpressionToJsonPath
     /// <summary>
     /// Converts a predicate expression to SQL WHERE conditions and extracts parameter values.
     /// Supports equality comparisons on JSON properties.
+    /// When virtual columns are provided, generates optimized SQL using column references instead of json_extract.
     /// </summary>
     /// <typeparam name="T">The type being queried</typeparam>
     /// <param name="predicate">The predicate expression to translate</param>
+    /// <param name="virtualColumns">Optional dictionary of virtual columns keyed by JSON path</param>
     /// <returns>A tuple containing the WHERE clause and a dictionary of parameter values</returns>
     /// <exception cref="NotSupportedException">Thrown when the predicate cannot be translated</exception>
-    public static (string whereClause, Dictionary<string, object> parameters) TranslatePredicate<T>(Expression<Func<T, bool>> predicate)
+    public static (string whereClause, Dictionary<string, object> parameters) TranslatePredicate<T>(
+        Expression<Func<T, bool>> predicate,
+        IReadOnlyDictionary<string, VirtualColumnInfo>? virtualColumns = null)
     {
         ArgumentNullException.ThrowIfNull(predicate);
 
         var parameters = new Dictionary<string, object>();
-        var whereClause = BuildWhereClause(predicate.Body, parameters);
+        var whereClause = BuildWhereClause(predicate.Body, parameters, virtualColumns);
 
         return (whereClause, parameters);
     }
@@ -92,31 +96,34 @@ internal static class ExpressionToJsonPath
         }
     }
 
-    private static string BuildWhereClause(Expression expression, Dictionary<string, object> parameters)
+    private static string BuildWhereClause(
+        Expression expression,
+        Dictionary<string, object> parameters,
+        IReadOnlyDictionary<string, VirtualColumnInfo>? virtualColumns)
     {
         switch (expression)
         {
             case BinaryExpression binary when binary.NodeType == ExpressionType.Equal:
-                return BuildEqualityComparison(binary, parameters);
+                return BuildEqualityComparison(binary, parameters, virtualColumns);
 
             case BinaryExpression binary when binary.NodeType == ExpressionType.NotEqual:
-                return BuildInequalityComparison(binary, parameters);
+                return BuildInequalityComparison(binary, parameters, virtualColumns);
 
             case BinaryExpression binary when binary.NodeType == ExpressionType.AndAlso:
-                var left = BuildWhereClause(binary.Left, parameters);
-                var right = BuildWhereClause(binary.Right, parameters);
+                var left = BuildWhereClause(binary.Left, parameters, virtualColumns);
+                var right = BuildWhereClause(binary.Right, parameters, virtualColumns);
                 return $"({left} AND {right})";
 
             case BinaryExpression binary when binary.NodeType == ExpressionType.OrElse:
-                var leftOr = BuildWhereClause(binary.Left, parameters);
-                var rightOr = BuildWhereClause(binary.Right, parameters);
+                var leftOr = BuildWhereClause(binary.Left, parameters, virtualColumns);
+                var rightOr = BuildWhereClause(binary.Right, parameters, virtualColumns);
                 return $"({leftOr} OR {rightOr})";
 
             case BinaryExpression binary when IsComparisonOperator(binary.NodeType):
-                return BuildComparisonOperator(binary, parameters);
+                return BuildComparisonOperator(binary, parameters, virtualColumns);
 
             case MethodCallExpression methodCall:
-                return BuildMethodCallCondition(methodCall, parameters);
+                return BuildMethodCallCondition(methodCall, parameters, virtualColumns);
 
             default:
                 throw new NotSupportedException(
@@ -125,25 +132,36 @@ internal static class ExpressionToJsonPath
         }
     }
 
-    private static string BuildEqualityComparison(BinaryExpression binary, Dictionary<string, object> parameters)
+    private static string BuildEqualityComparison(
+        BinaryExpression binary,
+        Dictionary<string, object> parameters,
+        IReadOnlyDictionary<string, VirtualColumnInfo>? virtualColumns)
     {
         var (jsonPath, value) = ExtractComparisonParts(binary);
         var paramName = $"p{parameters.Count}";
         parameters[paramName] = value;
 
-        return $"json_extract(data, '{jsonPath}') = @{paramName}";
+        var columnRef = GetColumnReference(jsonPath, virtualColumns);
+        return $"{columnRef} = @{paramName}";
     }
 
-    private static string BuildInequalityComparison(BinaryExpression binary, Dictionary<string, object> parameters)
+    private static string BuildInequalityComparison(
+        BinaryExpression binary,
+        Dictionary<string, object> parameters,
+        IReadOnlyDictionary<string, VirtualColumnInfo>? virtualColumns)
     {
         var (jsonPath, value) = ExtractComparisonParts(binary);
         var paramName = $"p{parameters.Count}";
         parameters[paramName] = value;
 
-        return $"json_extract(data, '{jsonPath}') != @{paramName}";
+        var columnRef = GetColumnReference(jsonPath, virtualColumns);
+        return $"{columnRef} != @{paramName}";
     }
 
-    private static string BuildComparisonOperator(BinaryExpression binary, Dictionary<string, object> parameters)
+    private static string BuildComparisonOperator(
+        BinaryExpression binary,
+        Dictionary<string, object> parameters,
+        IReadOnlyDictionary<string, VirtualColumnInfo>? virtualColumns)
     {
         var (jsonPath, value) = ExtractComparisonParts(binary);
         var paramName = $"p{parameters.Count}";
@@ -158,10 +176,14 @@ internal static class ExpressionToJsonPath
             _ => throw new NotSupportedException($"Comparison operator {binary.NodeType} not supported")
         };
 
-        return $"json_extract(data, '{jsonPath}') {op} @{paramName}";
+        var columnRef = GetColumnReference(jsonPath, virtualColumns);
+        return $"{columnRef} {op} @{paramName}";
     }
 
-    private static string BuildMethodCallCondition(MethodCallExpression methodCall, Dictionary<string, object> parameters)
+    private static string BuildMethodCallCondition(
+        MethodCallExpression methodCall,
+        Dictionary<string, object> parameters,
+        IReadOnlyDictionary<string, VirtualColumnInfo>? virtualColumns)
     {
         // Support common string methods like Contains, StartsWith, EndsWith
         if (methodCall.Method.DeclaringType == typeof(string))
@@ -169,20 +191,21 @@ internal static class ExpressionToJsonPath
             var jsonPath = TranslateToJsonPath(methodCall.Object!);
             var value = GetConstantValue(methodCall.Arguments[0]);
             var paramName = $"p{parameters.Count}";
+            var columnRef = GetColumnReference(jsonPath, virtualColumns);
 
             switch (methodCall.Method.Name)
             {
                 case "Contains":
                     parameters[paramName] = $"%{value}%";
-                    return $"json_extract(data, '{jsonPath}') LIKE @{paramName}";
+                    return $"{columnRef} LIKE @{paramName}";
 
                 case "StartsWith":
                     parameters[paramName] = $"{value}%";
-                    return $"json_extract(data, '{jsonPath}') LIKE @{paramName}";
+                    return $"{columnRef} LIKE @{paramName}";
 
                 case "EndsWith":
                     parameters[paramName] = $"%{value}";
-                    return $"json_extract(data, '{jsonPath}') LIKE @{paramName}";
+                    return $"{columnRef} LIKE @{paramName}";
 
                 default:
                     throw new NotSupportedException($"String method '{methodCall.Method.Name}' is not supported");
@@ -190,6 +213,22 @@ internal static class ExpressionToJsonPath
         }
 
         throw new NotSupportedException($"Method '{methodCall.Method.Name}' is not supported");
+    }
+
+    /// <summary>
+    /// Gets the SQL column reference for a JSON path.
+    /// Returns the virtual column name if one exists, otherwise returns json_extract().
+    /// </summary>
+    private static string GetColumnReference(
+        string jsonPath,
+        IReadOnlyDictionary<string, VirtualColumnInfo>? virtualColumns)
+    {
+        if (virtualColumns != null && virtualColumns.TryGetValue(jsonPath, out var columnInfo))
+        {
+            return $"[{columnInfo.ColumnName}]";
+        }
+
+        return $"json_extract(data, '{jsonPath}')";
     }
 
     private static (string jsonPath, object value) ExtractComparisonParts(BinaryExpression binary)

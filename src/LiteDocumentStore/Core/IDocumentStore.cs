@@ -127,6 +127,32 @@ public interface IDocumentStore : IAsyncDisposable, IDisposable
     Task CreateCompositeIndexAsync<T>(System.Linq.Expressions.Expression<Func<T, object>>[] jsonPaths, string? indexName = null);
 
     /// <summary>
+    /// Adds a virtual (generated) column to a table based on a JSON path expression.
+    /// Virtual columns are computed from json_extract(data, '$.path') and can be indexed for better query performance.
+    /// Automatically checks if the column exists before creation to avoid errors.
+    /// </summary>
+    /// <typeparam name="T">Type whose table will have the column added</typeparam>
+    /// <param name="jsonPath">Expression selecting the JSON property to extract (e.g., x => x.Email)</param>
+    /// <param name="columnName">Name for the new virtual column</param>
+    /// <param name="createIndex">If true, automatically creates an index on the virtual column</param>
+    /// <param name="columnType">The SQLite column type (TEXT, INTEGER, REAL, etc.). Defaults to TEXT.</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    /// <example>
+    /// <code>
+    /// // Add a virtual column for email with automatic indexing
+    /// await store.AddVirtualColumnAsync&lt;Customer&gt;(x => x.Email, "email", createIndex: true);
+    /// 
+    /// // Now queries can use the virtual column directly
+    /// // SELECT * FROM Customer WHERE email = 'john@example.com'
+    /// </code>
+    /// </example>
+    Task AddVirtualColumnAsync<T>(
+        System.Linq.Expressions.Expression<Func<T, object>> jsonPath,
+        string columnName,
+        bool createIndex = false,
+        string columnType = "TEXT");
+
+    /// <summary>
     /// Queries documents by a JSON path and value using json_extract().
     /// Supports patterns like: $.property, $.nested.property, $.array[0]
     /// </summary>
