@@ -105,7 +105,7 @@ Console.WriteLine($"Memory: Each customer includes Address, Contact, Preferences
 logger.LogInformation("\nBenchmark 2: SelectAsync for CustomerSummary (Name, Email only)...");
 sw.Restart();
 var summaries = await store.SelectAsync<Customer, CustomerSummary>(
-    c => new CustomerSummary(c.Name, c.Email)
+    c => new CustomerSummary { Name = c.Name, Email = c.Email }
 );
 sw.Stop();
 var summariesList = summaries.ToList();
@@ -116,7 +116,7 @@ Console.WriteLine($"Sample: {summariesList[0].Name} ({summariesList[0].Email})")
 logger.LogInformation("\nBenchmark 3: SelectAsync with nested properties (Name, City, State)...");
 sw.Restart();
 var locations = (await store.SelectAsync<Customer, CustomerLocation>(
-    c => new CustomerLocation(c.Name, c.Address.City, c.Address.State)
+    c => new CustomerLocation { Name = c.Name, City = c.Address.City, State = c.Address.State }
 )).ToList();
 sw.Stop();
 Console.WriteLine($"Retrieved {locations.Count} locations in {sw.ElapsedMilliseconds}ms");
@@ -128,7 +128,7 @@ logger.LogInformation("\nBenchmark 4: SelectAsync with predicate (New York custo
 sw.Restart();
 var nyLocations = (await store.SelectAsync<Customer, CustomerLocation>(
     c => c.Address.City == "New York",
-    c => new CustomerLocation(c.Name, c.Address.City, c.Address.State)
+    c => new CustomerLocation { Name = c.Name, City = c.Address.City, State = c.Address.State }
 )).ToList();
 sw.Stop();
 Console.WriteLine($"Retrieved {nyLocations.Count} New York customers in {sw.ElapsedMilliseconds}ms");
@@ -137,7 +137,7 @@ Console.WriteLine($"Retrieved {nyLocations.Count} New York customers in {sw.Elap
 logger.LogInformation("\nBenchmark 5: SelectAsync with deep nesting (Name, Email, Phone)...");
 sw.Restart();
 var contacts = await store.SelectAsync<Customer, CustomerContact>(
-    c => new CustomerContact(c.Name, c.Email, c.Contact.PrimaryPhone)
+    c => new CustomerContact { Name = c.Name, Email = c.Email, PrimaryPhone = c.Contact.PrimaryPhone }
 );
 sw.Stop();
 var contactsList = contacts.ToList();
@@ -189,6 +189,22 @@ record Customer(
 );
 
 // Projection DTOs
-record CustomerSummary(string Name, string Email);
-record CustomerLocation(string Name, string City, string State);
-record CustomerContact(string Name, string Email, string PrimaryPhone);
+record CustomerSummary
+{
+    public string Name { get; init; } = null!;
+    public string Email { get; init; } = null!;
+}
+
+record CustomerLocation
+{
+    public string Name { get; init; } = null!;
+    public string City { get; init; } = null!;
+    public string State { get; init; } = null!;
+}
+
+record CustomerContact
+{
+    public string Name { get; init; } = null!;
+    public string Email { get; init; } = null!;
+    public string PrimaryPhone { get; init; } = null!;
+}

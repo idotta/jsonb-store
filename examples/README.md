@@ -24,114 +24,155 @@ On Windows PowerShell:
 ## Available Examples
 
 ### 1. [QuickStart.cs](QuickStart.cs)
-**Basic CRUD operations** - Learn the fundamentals:
-- Creating a document store with in-memory database
-- Creating tables for document types
-- Inserting/updating documents (Upsert)
-- Retrieving documents by ID (Get)
-- Getting all documents (GetAll)
-- Checking existence and counting documents
-- Deleting documents
-- Bulk operations with transactions
+**Basic CRUD operations** - Learn the fundamentals
 
-**Perfect for**: First-time users, understanding the basics
+Demonstrates the core document store operations with a simple Customer model:
+- Creating an in-memory document store with DI configuration
+- Table creation with `CreateTableAsync<T>()`
+- Inserting and updating documents with `UpsertAsync()` (insert or replace)
+- Retrieving single documents by ID with `GetAsync()`
+- Getting all documents with `GetAllAsync()`
+- Checking document existence with `ExistsAsync()`
+- Counting documents with `CountAsync()`
+- Deleting documents with `DeleteAsync()`
+- Bulk operations in transactions with `ExecuteInTransactionAsync()`
+
+**Perfect for**: First-time users, understanding the API basics
+
+**Run time**: < 1 second
 
 ---
 
 ### 2. [VirtualColumn.cs](VirtualColumn.cs)
-**Dramatic query performance improvements** - 100x-1000x speedup:
-- What virtual columns are and why they matter
-- Creating virtual columns with indexes
-- Benchmarking queries with and without virtual columns
-- Point queries (exact match) optimization
-- Range queries on indexed columns
-- Using raw SQL with virtual columns
+**Dramatic query performance improvements** - 100x-1000x speedup
 
-**Perfect for**: Performance-critical applications, large datasets
+Shows how virtual columns transform query performance by extracting JSON properties into indexed SQLite columns:
+- Creating and seeding 10,000 products for benchmarking
+- Benchmarking queries WITHOUT virtual columns (full table scans)
+- Adding virtual columns with `AddVirtualColumnAsync()` and indexes
+- Benchmarking queries WITH virtual columns (index seeks)
+- Point queries (exact match like `p.Category == "Electronics"`)
+- Range queries (like `p.Price > 100`)
+- Using raw SQL with virtual columns for complex filters
 
-**Key concept**: Virtual columns extract JSON fields into indexed SQLite columns, enabling index seeks instead of full table scans.
+**Performance highlights** (10K rows):
+- Category query: 49ms → 9ms (5x faster)
+- SKU lookup: 1ms → 0ms (instant with index)
+- Range queries on indexed columns also show significant speedup
+
+**Perfect for**: Performance-critical applications, large datasets, frequently queried fields
+
+**Key concept**: Virtual columns are SQLite's generated columns - they extract JSON values and store them as real columns that can be indexed. `QueryAsync()` automatically uses them.
+
+**Run time**: ~2-3 seconds (includes data seeding)
 
 ---
 
 ### 3. [HybridUsage.cs](HybridUsage.cs)
-**Mix document storage with traditional SQL** - Best of both worlds:
-- Creating document tables alongside relational tables
-- Joining documents with JSON extraction
-- Aggregate queries (SUM, COUNT, GROUP BY)
-- Creating views over JSON data
-- Full-text search with FTS5
-- Complex multi-table queries
+**Mix document storage with traditional SQL** - Best of both worlds
 
-**Perfect for**: Real-world applications needing both flexible schemas and relational power
+Demonstrates that LiteDocumentStore is a HYBRID library - you get convenient document APIs AND full SQLite access:
+- Creating document tables (Customer, Order) with the document store
+- Inserting documents with `UpsertAsync()`
+- Writing raw SQL joins across document tables using `json_extract()`
+- Aggregate queries (SUM, GROUP BY) with `store.Connection`
+- Creating SQL views over JSON data
+- Mixing document tables with traditional relational tables
+- Advanced filtering with SQLite functions (LOWER, LIKE)
 
-**Key concept**: LiteDocumentStore never prevents you from using raw SQL. The `Connection` property gives full access to Dapper and SQLite.
+**SQL Examples**:
+- JOIN orders with customers via `json_extract()`
+- SUM aggregations grouped by customer
+- Creating views that flatten JSON into columns
+- Creating traditional tables alongside document tables
+
+**Perfect for**: Real-world applications needing both flexible schemas and relational queries
+
+**Key concept**: The `Connection` property gives you full Dapper access. You're never locked into just the document API - drop down to SQL anytime.
+
+**Run time**: < 1 second
 
 ---
 
 ### 4. [ProjectionQuery.cs](ProjectionQuery.cs)
-**Select only needed fields** - Reduce memory and improve performance:
-- Using `SelectAsync` for field projection
-- Nested property access (e.g., `c.Address.City`)
+**Select only needed fields** - Reduce memory and improve performance
+
+Demonstrates how to extract specific JSON fields instead of deserializing entire documents:
+- Seeding 1,000 customers with rich nested data (Address, Contact, Preferences, OrderHistory, Metadata)
+- Benchmarking `GetAllAsync()` (full document deserialization)
+- Using `SelectAsync<TSource, TResult>()` for field projection
+- Projecting simple properties (Name, Email only)
+- Projecting nested properties (Address.City, Address.State)
 - Filtered projections with predicates
-- Comparing full deserialization vs projection performance
 - Complex aggregations with raw SQL
 
-**Perfect for**: List views, reports, APIs that don't need full documents
+**Memory & Performance**:
+- Full documents: All nested objects deserialized
+- Projection: Only specified fields extracted from JSON
+- Reduces memory footprint for list views and reports
 
-**Key concept**: Projection queries extract specific JSON fields instead of deserializing entire documents.
+**Perfect for**: List views, reports, APIs returning summaries, reducing bandwidth
+
+**Key concept**: Projection uses `json_extract()` in SQL to retrieve only needed fields, avoiding full deserialization overhead.
+
+**Run time**: ~1-2 seconds
 
 ---
 
 ### 5. [IndexManagement.cs](IndexManagement.cs)
-**Optimize query performance with JSON indexes** - Avoid full table scans:
-- Creating indexes on JSON properties
-- Nested property indexing (e.g., `Address.City`)
-- Composite indexes for multi-column queries
-- Index naming conventions
-- Benchmarking query performance with/without indexes
-- Schema introspection with `SchemaIntrospector`
+**Optimize query performance with JSON indexes** - Avoid full table scans
 
-**Perfect for**: Improving query performance on large datasets
+Shows how to create indexes on JSON properties for dramatic query speedups:
+- Seeding 5,000 customers for benchmarking
+- Benchmarking queries WITHOUT indexes (full table scans)
+- Creating single-column indexes with `CreateIndexAsync()`
+- Benchmarking queries WITH indexes (index seeks)
+- Creating indexes on nested properties (Address.City)
+- Creating composite indexes with `CreateCompositeIndexAsync()`
+- Demonstrating idempotent index creation (safe to call multiple times)
+- Inspecting indexes with raw SQL queries
 
-**Key concept**: Indexes on JSON properties use `json_extract()` to enable SQLite's B-tree index seeks.
+**Performance highlights** (5K rows):
+- Email lookup: 4ms → 0ms with index (instant)
+- City query: Significant speedup with nested property index
+- Composite index: Efficient for multi-column filters
+
+**Perfect for**: Improving query performance on large datasets without using virtual columns
+
+**Key difference from virtual columns**: 
+- **Indexes**: Use `json_extract()` in the index expression, column doesn't exist
+- **Virtual columns**: Create actual columns that store extracted values
+
+**Run time**: ~1-2 seconds (includes data seeding)
 
 ---
 
 ### 6. [Migration.cs](Migration.cs)
-**Schema versioning and evolution** - Track and apply schema changes:
-- Defining migrations with version numbers
-- Up/down migration support
-- Applying pending migrations with `MigrationRunner`
-- Rolling back to previous versions
-- Migration history tracking in `__store_migrations`
-- Schema introspection (tables, columns, indexes)
-- Database statistics
+**Schema versioning and evolution** - Track and apply schema changes
 
-**Perfect for**: Production applications needing schema versioning
+Demonstrates a complete migration system for managing schema changes over time:
+- Defining migrations with version numbers (YYYYMMDDnnn format)
+- Each migration has `upSql` (apply) and `downSql` (revert)
+- Creating a `MigrationRunner` instance
+- Applying pending migrations with `ApplyMigrationsAsync()`
+- Migration history tracked in `__store_migrations` table
+- Rolling back to previous versions with `RollbackToVersionAsync()`
+- Schema introspection with `SchemaIntrospector`:
+  - Listing tables and columns
+  - Viewing indexes
+  - Database statistics (page count, size)
 
-**Key concept**: Each migration runs in a transaction and is recorded only if successful. Timestamp-based versioning ensures ordered execution.
+**Migration examples**:
+1. Create initial tables (Customer, Order)
+2. Add email index for performance
+3. Add composite indexes on orders
+4. Add virtual column for city with index
 
----
+**Perfect for**: Production applications, team environments, schema evolution over time
 
-### 7. [TransactionBatching.cs](TransactionBatching.cs) *(Coming Soon)*
-**Batch operations with transactions** - Atomic multi-step operations:
-- Using `ExecuteInTransactionAsync` for batch operations
-- Automatic commit/rollback
-- Combining multiple operations atomically
-- Performance benefits of batching
+**Key concept**: Migrations are transactional and atomic - each runs in a transaction and is only recorded if successful. Version numbers ensure ordered execution.
 
-**Perfect for**: Bulk inserts, complex multi-step operations
-
----
-
-### 8. [MultiDatabase.cs](MultiDatabase.cs) *(Coming Soon)*
-**Multiple database instances** - Multi-tenant or read replicas:
-- Registering multiple document stores with DI
-- Using keyed services (.NET 8+)
-- Managing separate databases (e.g., read replicas, multi-tenant)
-- Cross-database operations
-
-**Perfect for**: Multi-tenant SaaS applications, read/write separation
+**Run time**: ~1-2 seconds
 
 ---
 
@@ -140,28 +181,39 @@ On Windows PowerShell:
 Each example follows this pattern:
 
 1. **Shebang line** - `#!/usr/bin/env dotnet run` for Unix execution
-2. **Description** - What the example demonstrates
-3. **Using statements** - Required namespaces
-4. **Model definitions** - Sample data structures
-5. **Setup** - Creating store, tables, seeding data
-6. **Feature demonstration** - The actual example code
-7. **Summary** - Key takeaways
+2. **Header comment** - Description and run instructions
+3. **Package directives** - Using `#:package` for dependencies
+4. **Project reference** - Links to the LiteDocumentStore project
+5. **Model definitions** - Sample data structures (usually at bottom)
+6. **Setup** - Creating store, tables, seeding data
+7. **Feature demonstration** - Benchmarks and usage examples
+8. **Summary** - Key takeaways printed to console
 
 ## Prerequisites
 
 - .NET 10 SDK or later
 - SQLite 3.45+ (bundled with modern .NET)
-- LiteDocumentStore library (reference the local project or NuGet package)
+- LiteDocumentStore library (examples reference `../src/LiteDocumentStore/LiteDocumentStore.csproj`)
 
-## Learn **IndexManagement.cs** for query optimization
-6. Study **Migration.cs** for production schema management
-7. Tips for Learning
+## Tips for Learning
 
-1. Start with **QuickStart.cs** to understand the basics
-2. Run **VirtualColumn.cs** to see the performance magic
-3. Explore **HybridUsage.cs** to understand the hybrid philosophy
-4. Try **ProjectionQuery.cs** for efficient data access patterns
-5. Modify the examples to experiment with your own data models
+1. **Start with QuickStart.cs** to understand the API basics
+2. **Run VirtualColumn.cs** to see dramatic performance improvements
+3. **Explore HybridUsage.cs** to understand the hybrid SQL approach
+4. **Study IndexManagement.cs** for query optimization techniques
+5. **Review Migration.cs** for production schema management
+6. **Experiment** by modifying examples with your own data models
+
+## Quick Reference Table
+
+| Example | Focus Area | Dataset Size | Run Time | Key API |
+|---------|-----------|--------------|----------|---------|
+| QuickStart.cs | CRUD basics | 6 records | <1s | `UpsertAsync`, `GetAsync`, `DeleteAsync` |
+| VirtualColumn.cs | Performance | 10K products | ~2-3s | `AddVirtualColumnAsync`, `QueryAsync` |
+| HybridUsage.cs | SQL integration | Small | <1s | `Connection`, raw SQL |
+| ProjectionQuery.cs | Field selection | 1K customers | ~1-2s | `SelectAsync` |
+| IndexManagement.cs | Indexing | 5K customers | ~1-2s | `CreateIndexAsync`, `CreateCompositeIndexAsync` |
+| Migration.cs | Schema versioning | Small | ~1-2s | `MigrationRunner`, `SchemaIntrospector` |
 
 ## Feedback
 
