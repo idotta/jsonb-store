@@ -183,9 +183,16 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ## 7. Performance Optimizations
 
-- [ ] **Prepared statement caching**
-  - [ ] Cache parameterized SQL for repeated operations
-  - [ ] Dapper handles this partially, verify optimization
+- [x] **Prepared statement caching**
+  - [x] **INVESTIGATED & REJECTED** (January 2026)
+  - [x] Implemented `PreparedStatementCache` with ConcurrentDictionary for thread-safe SQL caching
+  - [x] Comprehensive benchmarks showed **3-5% SLOWER performance** despite 10-19% memory reduction
+  - [x] **Root cause**: ConcurrentDictionary lookup + cache key construction costs more than generating simple SQL strings
+  - [x] **Dapper already caches** at ADO.NET level (command plans, parameter mapping)
+  - [x] Modern C# string interpolation is highly optimized by JIT compiler
+  - [x] **Conclusion**: For a "Performance First" library, trading speed for ~200-400 KB per 1000 operations is the wrong tradeoff
+  - [x] SQL generation is fast enough; focus optimization efforts elsewhere
+  - [x] Full benchmark results preserved in `LiteDocumentStore.Benchmarks.PreparedStatementCacheBenchmark-report-github.md`
 
 - [ ] **JSONB verification**
   - [ ] Ensure `jsonb()` function is used on write (exists)
