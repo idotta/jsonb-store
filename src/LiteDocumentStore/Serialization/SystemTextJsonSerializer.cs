@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LiteDocumentStore.Exceptions;
 
 namespace LiteDocumentStore;
 
@@ -29,7 +30,24 @@ internal sealed class SystemTextJsonSerializer : IJsonSerializer
     /// <inheritdoc/>
     public string Serialize<T>(T value)
     {
-        return JsonSerializer.Serialize(value, _options);
+        try
+        {
+            return JsonSerializer.Serialize(value, _options);
+        }
+        catch (JsonException ex)
+        {
+            throw new SerializationException(
+                $"Failed to serialize object of type {typeof(T).Name}.",
+                typeof(T),
+                ex);
+        }
+        catch (NotSupportedException ex)
+        {
+            throw new SerializationException(
+                $"Serialization not supported for type {typeof(T).Name}.",
+                typeof(T),
+                ex);
+        }
     }
 
     /// <inheritdoc/>
@@ -40,6 +58,16 @@ internal sealed class SystemTextJsonSerializer : IJsonSerializer
             return default;
         }
 
-        return JsonSerializer.Deserialize<T>(json, _options);
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, _options);
+        }
+        catch (JsonException ex)
+        {
+            throw new SerializationException(
+                $"Failed to deserialize JSON to type {typeof(T).Name}.",
+                typeof(T),
+                ex);
+        }
     }
 }

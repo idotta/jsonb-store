@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using LiteDocumentStore.Exceptions;
 
 namespace LiteDocumentStore;
 
@@ -14,7 +15,7 @@ public sealed class DateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset
     /// </summary>
     /// <param name="value">The value from the database to parse.</param>
     /// <returns>The parsed DateTimeOffset.</returns>
-    /// <exception cref="DataException">In case the value cannot be parsed as a DateTimeOffset.</exception>
+    /// <exception cref="SerializationException">In case the value cannot be parsed as a DateTimeOffset.</exception>
     public override DateTimeOffset Parse(object value)
     {
         if (value is string strValue)
@@ -23,10 +24,10 @@ public sealed class DateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset
             {
                 return result;
             }
-            throw new DataException($"Invalid DateTimeOffset value: {strValue}");
+            throw new SerializationException($"Invalid DateTimeOffset value: {strValue}");
         }
 
-        throw new DataException($"Unsupported DateTimeOffset value: {value.GetType()}");
+        throw new SerializationException($"Unsupported DateTimeOffset value type: {value.GetType().Name}");
     }
 
     /// <summary>

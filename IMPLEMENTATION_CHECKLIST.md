@@ -208,11 +208,11 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ## 8. Error Handling & Resilience
 
-- [x] **Custom exceptions** (basic implementation)
+- [x] **Custom exceptions**
   - [x] **NEW**: Built-in .NET exceptions used appropriately (ArgumentNullException, ObjectDisposedException, etc.)
-  - [ ] `LiteDocumentStoreException` base class
-  - [ ] `TableNotFoundException`, `SerializationException`, `ConcurrencyException`
-  - [ ] Preserve inner SQLite exceptions
+  - [x] `LiteDocumentStoreException` base class
+  - [x] `TableNotFoundException`, `SerializationException`, `ConcurrencyException`
+  - [x] Preserve inner SQLite exceptions
 
 - [x] **Validation**
   - [x] Validate ID is not null/empty before operations

@@ -1,4 +1,5 @@
 using Dapper;
+using LiteDocumentStore.Exceptions;
 using System.Data;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -31,8 +32,25 @@ public sealed class SqliteJsonbTypeHandler<T> : SqlMapper.TypeHandler<T>
         }
         else
         {
-            // SerializeToUtf8Bytes is faster than Serialize(string)
-            parameter.Value = JsonSerializer.SerializeToUtf8Bytes(value, Options);
+            try
+            {
+                // SerializeToUtf8Bytes is faster than Serialize(string)
+                parameter.Value = JsonSerializer.SerializeToUtf8Bytes(value, Options);
+            }
+            catch (JsonException ex)
+            {
+                throw new SerializationException(
+                    $"Failed to serialize object of type {typeof(T).Name} to JSONB.",
+                    typeof(T),
+                    ex);
+            }
+            catch (NotSupportedException ex)
+            {
+                throw new SerializationException(
+                    $"Serialization not supported for type {typeof(T).Name}.",
+                    typeof(T),
+                    ex);
+            }
         }
         parameter.DbType = DbType.Binary;
     }
@@ -42,15 +60,25 @@ public sealed class SqliteJsonbTypeHandler<T> : SqlMapper.TypeHandler<T>
     /// </summary>
     /// <param name="value">The JSONB value from the database</param>
     /// <returns>The deserialized object</returns>
-    /// <exception cref="DataException">Thrown when the JSON value cannot be parsed</exception>
+    /// <exception cref="SerializationException">Thrown when the JSON value cannot be parsed</exception>
     public override T? Parse(object value)
     {
-        return value switch
+        try
         {
-            null or DBNull => default,
-            byte[] bytes => JsonSerializer.Deserialize<T>(bytes)!,
-            string json => JsonSerializer.Deserialize<T>(json)!,
-            _ => throw new DataException($"Unsupported JSON value: {value.GetType()}")
-        };
+            return value switch
+            {
+                null or DBNull => default,
+                byte[] bytes => JsonSerializer.Deserialize<T>(bytes)!,
+                string json => JsonSerializer.Deserialize<T>(json)!,
+                _ => throw new SerializationException($"Unsupported JSON value type: {value.GetType().Name}")
+            };
+        }
+        catch (JsonException ex)
+        {
+            throw new SerializationException(
+                $"Failed to deserialize JSONB to type {typeof(T).Name}.",
+                typeof(T),
+                ex);
+        }
     }
 }

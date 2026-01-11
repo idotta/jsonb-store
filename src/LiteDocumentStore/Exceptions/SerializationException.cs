@@ -1,0 +1,43 @@
+namespace LiteDocumentStore.Exceptions;
+
+/// <summary>
+/// Exception thrown when JSON serialization or deserialization fails.
+/// </summary>
+public class SerializationException : LiteDocumentStoreException
+{
+    /// <summary>
+    /// Gets the type that was being serialized or deserialized when the error occurred.
+    /// </summary>
+    public Type? TargetType { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SerializationException"/> class.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    public SerializationException(string message)
+        : base(message)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SerializationException"/> class with an inner exception.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    /// <param name="innerException">The exception that is the cause of the current exception.</param>
+    public SerializationException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SerializationException"/> class with type information.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
+    /// <param name="targetType">The type that was being serialized or deserialized.</param>
+    /// <param name="innerException">The exception that is the cause of the current exception.</param>
+    public SerializationException(string message, Type targetType, Exception innerException)
+        : base(message, innerException)
+    {
+        TargetType = targetType;
+    }
+}
