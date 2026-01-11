@@ -205,6 +205,16 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] Compare vs raw Dapper, LiteDB
   - [x] Measure: single insert, bulk insert, query, full-table scan
 
+- [x] **Dapper type handlers**
+  - [x] **INVESTIGATED & REJECTED** (January 2026)
+  - [x] Created `SqliteJsonbTypeHandler<T>` and `TypeHandlerRegistry` for automatic type mapping
+  - [x] **Root cause**: System.Text.Json cannot parse SQLite's proprietary JSONB binary format
+  - [x] **Required pattern**: Must use SQLite's `json()` function to convert JSONB → JSON string first
+  - [x] Type handlers would receive raw JSONB blobs from `SELECT data FROM table` but can't deserialize them
+  - [x] **Conclusion**: Manual deserialization with `JsonHelper` after `json()` conversion is the only viable approach
+  - [x] Current pattern (`QueryAsync<string>` + `JsonHelper.Deserialize`) is explicit, clear, and works correctly
+  - [x] `SqliteJsonbTypeHandler<T>` kept for reference but not used in the codebase
+
 ---
 
 ## 8. Error Handling & Resilience
@@ -232,24 +242,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 10. Type Handler System
-
-- [x] **Improve `SqliteJsonbTypeHandler<T>`**
-  - [x] ~~Make JSON serializer injectable~~ - **CHANGED**: Uses fixed `JsonHelper` for consistent performance
-  - [x] Handle `null` values explicitly
-  - [x] **NEW**: Integrated with optimized `JsonHelper` using `SerializeToUtf8Bytes`
-
-- [ ] **Auto-registration**
-  - [ ] Automatic type handler registration on first use
-  - [ ] Type handler cache to avoid re-registration
-
-- [ ] **Complex type support**
-  - [ ] Collections, dictionaries, nested objects
-  - [ ] Polymorphic serialization with type discriminator
-
----
-
-## 11. Testing Infrastructure
+## 10. Testing Infrastructure
 
 - [x] **Unit tests** (mock connection)
   - [x] Test all public API methods
@@ -272,7 +265,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 12. Documentation & Developer Experience
+## 11. Documentation & Developer Experience
 
 - [x] **XML documentation**
   - [x] All public APIs documented
@@ -296,7 +289,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 13. Packaging & Distribution
+## 12. Packaging & Distribution
 
 - [ ] **NuGet package**
   - [ ] Proper `.nuspec` or SDK-style properties
@@ -311,7 +304,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
 
 ---
 
-## 14. Security Considerations
+## 13. Security Considerations
 
 - [ ] **SQL injection prevention**
   - [ ] All user-facing table names validated/sanitized
