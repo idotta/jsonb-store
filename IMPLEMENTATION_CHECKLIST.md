@@ -249,19 +249,19 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: Connection ownership tests (ownsConnection parameter)
   - [x] **NEW**: Disposal pattern verification
   - [x] Edge cases: null, empty, special characters in ID
-  - [ ] Concurrency scenarios
+  - [x] Concurrency scenarios
 
 - [x] **Integration tests** (real SQLite)
   - [x] In-memory database for speed
   - [x] **NEW**: Full CRUD operation testing
   - [x] **NEW**: Transaction commit and rollback tests
   - [x] **NEW**: GetAllAsync, DeleteAsync verification
-  - [ ] File-based database for WAL testing
-  - [ ] Multi-connection concurrency tests
+  - [x] File-based database for WAL testing
+  - [x] Multi-connection concurrency tests
 
-- [ ] **Test helpers**
-  - [ ] `LiteDocumentStoreTestFixture` for easy test setup
-  - [ ] Database seeding utilities
+- [x] **Test helpers**
+  - [x] `LiteDocumentStoreTestFixture` for easy test setup
+  - [x] Database seeding utilities
 
 ---
 
@@ -272,16 +272,12 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: Comprehensive XML docs for all interfaces and public classes
   - [x] **NEW**: Parameter descriptions and return value documentation
   - [ ] Include examples in `<example>` tags
-  - [ ] Generate API reference site
 
 - [x] **README improvements**
   - [x] Quick start guide with code examples
   - [x] **NEW**: Features list with checkmarks
   - [x] **NEW**: JSONB benefits explained
   - [x] **NEW**: CI/CD badges
-  - [ ] Common patterns and recipes
-  - [ ] FAQ section
-  - [ ] Performance tuning guide
 
 - [ ] **Sample projects**
   - [ ] Console app example

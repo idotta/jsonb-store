@@ -216,6 +216,8 @@ public class DocumentStoreTests
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
+        public int Age { get; set; }
+        public string Email { get; set; } = string.Empty;
     }
 
     private class TestCustomer
@@ -396,6 +398,156 @@ public class DocumentStoreTests
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
                 await store.SelectAsync<TestCustomer, CustomerProjection>(null!));
+        }
+
+        // Cleanup
+        if (File.Exists(_testDbPath))
+        {
+            try { File.Delete(_testDbPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task ConcurrentUpsert_AllOperationsComplete()
+    {
+        // Arrange
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var connectionFactory = new DefaultConnectionFactory();
+
+        using (var connection = connectionFactory.CreateConnection(options))
+        {
+            var store = new DocumentStore(connection);
+            await store.CreateTableAsync<TestPerson>();
+
+            // Act - Perform multiple concurrent upserts
+            var tasks = Enumerable.Range(0, 10).Select(i =>
+                store.UpsertAsync($"person-{i}", new TestPerson
+                {
+                    Name = $"Person {i}",
+                    Age = 20 + i,
+                    Email = $"person{i}@example.com"
+                })
+            );
+
+            await Task.WhenAll(tasks);
+
+            // Assert - All records should be inserted
+            var count = await store.CountAsync<TestPerson>();
+            Assert.Equal(10, count);
+        }
+
+        // Cleanup
+        if (File.Exists(_testDbPath))
+        {
+            try { File.Delete(_testDbPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task ConcurrentRead_AllOperationsSucceed()
+    {
+        // Arrange
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var connectionFactory = new DefaultConnectionFactory();
+
+        using (var connection = connectionFactory.CreateConnection(options))
+        {
+            var store = new DocumentStore(connection);
+            await store.CreateTableAsync<TestPerson>();
+
+            // Insert test data
+            await store.UpsertAsync("person-1", new TestPerson
+            {
+                Name = "Test Person",
+                Age = 25,
+                Email = "test@example.com"
+            });
+
+            // Act - Perform multiple concurrent reads
+            var tasks = Enumerable.Range(0, 20).Select(_ =>
+                store.GetAsync<TestPerson>("person-1")
+            );
+
+            var results = await Task.WhenAll(tasks);
+
+            // Assert - All reads should succeed and return the same data
+            Assert.All(results, result =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal("Test Person", result.Name);
+                Assert.Equal(25, result.Age);
+            });
+        }
+
+        // Cleanup
+        if (File.Exists(_testDbPath))
+        {
+            try { File.Delete(_testDbPath); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task ConcurrentMixedOperations_AllOperationsComplete()
+    {
+        // Arrange
+        var options = new DocumentStoreOptions { ConnectionString = $"Data Source={_testDbPath}" };
+        var connectionFactory = new DefaultConnectionFactory();
+
+        using (var connection = connectionFactory.CreateConnection(options))
+        {
+            var store = new DocumentStore(connection);
+            await store.CreateTableAsync<TestPerson>();
+
+            // Insert initial data
+            await store.UpsertAsync("person-0", new TestPerson
+            {
+                Name = "Initial Person",
+                Age = 30,
+                Email = "initial@example.com"
+            });
+
+            // Act - Mix of concurrent operations: upserts, reads, and updates
+            var tasks = new List<Task>();
+
+            // Add some upserts
+            for (int i = 1; i <= 5; i++)
+            {
+                int id = i; // Capture for closure
+                tasks.Add(store.UpsertAsync($"person-{id}", new TestPerson
+                {
+                    Name = $"Person {id}",
+                    Age = 20 + id,
+                    Email = $"person{id}@example.com"
+                }));
+            }
+
+            // Add some reads
+            for (int i = 0; i < 10; i++)
+            {
+                tasks.Add(store.GetAsync<TestPerson>("person-0"));
+            }
+
+            // Add some updates to person-0
+            for (int i = 0; i < 5; i++)
+            {
+                int iteration = i; // Capture for closure
+                tasks.Add(store.UpsertAsync("person-0", new TestPerson
+                {
+                    Name = $"Updated Person {iteration}",
+                    Age = 30 + iteration,
+                    Email = "initial@example.com"
+                }));
+            }
+
+            await Task.WhenAll(tasks);
+
+            // Assert - Verify final state
+            var count = await store.CountAsync<TestPerson>();
+            Assert.Equal(6, count); // person-0 through person-5
+
+            var person0 = await store.GetAsync<TestPerson>("person-0");
+            Assert.NotNull(person0);
+            Assert.Equal("initial@example.com", person0.Email);
         }
 
         // Cleanup
