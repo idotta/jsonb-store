@@ -130,19 +130,6 @@ internal sealed class DocumentStore : IDocumentStore
             return 0;
         }
 
-        // Validate all items
-        for (int i = 0; i < itemsList.Count; i++)
-        {
-            if (string.IsNullOrWhiteSpace(itemsList[i].id))
-            {
-                throw new ArgumentException($"ID at index {i} cannot be null or empty.", nameof(items));
-            }
-            if (itemsList[i].data == null)
-            {
-                throw new ArgumentException($"Data at index {i} cannot be null.", nameof(items));
-            }
-        }
-
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateBulkUpsertSql(tableName, itemsList.Count);
 
@@ -152,6 +139,16 @@ internal sealed class DocumentStore : IDocumentStore
         var parameters = new DynamicParameters();
         for (int i = 0; i < itemsList.Count; i++)
         {
+            // Validate all items
+            if (string.IsNullOrWhiteSpace(itemsList[i].id))
+            {
+                throw new ArgumentException($"ID at index {i} cannot be null or empty.", nameof(items));
+            }
+            if (itemsList[i].data == null)
+            {
+                throw new ArgumentException($"Data at index {i} cannot be null.", nameof(items));
+            }
+
             var (id, data) = itemsList[i];
             var jsonBytes = JsonHelper.SerializeToUtf8Bytes(data);
             parameters.Add($"Id{i}", id);

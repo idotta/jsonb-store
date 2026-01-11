@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LiteDocumentStore.Exceptions;
@@ -21,6 +22,11 @@ internal static class JsonHelper
         PropertyNameCaseInsensitive = false,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         WriteIndented = false
+    };
+
+    private static readonly JsonWriterOptions WriterOptions = new()
+    {
+        Indented = false
     };
 
     /// <summary>
