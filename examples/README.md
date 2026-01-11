@@ -176,6 +176,30 @@ Demonstrates a complete migration system for managing schema changes over time:
 
 ---
 
+### 7. [TransactionBatching.cs](TransactionBatching.cs)
+**Maximize performance with transactions** - 50x-100x speedup for bulk operations
+
+Demonstrates how transaction batching dramatically improves performance for bulk operations:
+- Benchmarking individual inserts vs. batched inserts
+- Using `ExecuteInTransactionAsync()` for automatic transaction management
+- Bulk operations with `UpsertManyAsync()` for maximum speed
+- Transaction rollback on errors (atomic operations)
+- Using `IDbTransaction` parameter to mix document ops with raw SQL
+- Multi-table atomic transactions (orders + customers)
+
+**Performance highlights** (1,000 inserts):
+- Individual inserts: ~5000ms
+- Batched in transaction: ~50-100ms (50x-100x faster)
+- UpsertManyAsync: ~30-50ms (100x-167x faster)
+
+**Perfect for**: Data imports, batch processing, ensuring data consistency, bulk operations
+
+**Key concept**: SQLite writes are disk-bound. Each individual insert without a transaction requires a full disk sync. Wrapping operations in a transaction batches all writes into a single disk sync at commit time.
+
+**Run time**: ~5-10 seconds (includes benchmarks)
+
+---
+
 ## Example Structure
 
 Each example follows this pattern:
@@ -198,18 +222,20 @@ Each example follows this pattern:
 ## Tips for Learning
 
 1. **Start with QuickStart.cs** to understand the API basics
-2. **Run VirtualColumn.cs** to see dramatic performance improvements
-3. **Explore HybridUsage.cs** to understand the hybrid SQL approach
-4. **Study IndexManagement.cs** for query optimization techniques
-5. **Review Migration.cs** for production schema management
-6. **Experiment** by modifying examples with your own data models
+2. **Run TransactionBatching.cs** to learn critical performance optimization
+3. **Run VirtualColumn.cs** to see dramatic query performance improvements
+4. **Explore HybridUsage.cs** to understand the hybrid SQL approach
+5. **Study IndexManagement.cs** for query optimization techniques
+6. **Review Migration.cs** for production schema management
+7. **Experiment** by modifying examples with your own data models
 
 ## Quick Reference Table
 
 | Example | Focus Area | Dataset Size | Run Time | Key API |
 |---------|-----------|--------------|----------|---------|
 | QuickStart.cs | CRUD basics | 6 records | <1s | `UpsertAsync`, `GetAsync`, `DeleteAsync` |
-| VirtualColumn.cs | Performance | 10K products | ~2-3s | `AddVirtualColumnAsync`, `QueryAsync` |
+| TransactionBatching.cs | Bulk performance | 1K orders | ~5-10s | `ExecuteInTransactionAsync`, `UpsertManyAsync` |
+| VirtualColumn.cs | Query performance | 10K products | ~2-3s | `AddVirtualColumnAsync`, `QueryAsync` |
 | HybridUsage.cs | SQL integration | Small | <1s | `Connection`, raw SQL |
 | ProjectionQuery.cs | Field selection | 1K customers | ~1-2s | `SelectAsync` |
 | IndexManagement.cs | Indexing | 5K customers | ~1-2s | `CreateIndexAsync`, `CreateCompositeIndexAsync` |

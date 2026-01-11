@@ -286,7 +286,7 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] ProjectionQuery.cs - Field projection for performance
   - [x] IndexManagement.cs - Creating and using JSON path indexes
   - [x] Migration.cs - Schema versioning and evolution
-  - [ ] TransactionBatching.cs - Batch operations example
+  - [x] TransactionBatching.cs - Batch operations example
   - [ ] MultiDatabase.cs - Multiple database instances with IDocumentStoreFactory
   - [ ] MultiDatabaseKeyed.cs - Multiple database instances with keyed services
   - [x] examples/README.md - Documentation for all examples
