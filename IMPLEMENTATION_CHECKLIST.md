@@ -218,12 +218,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] Validate ID is not null/empty before operations
   - [x] Validate data is not null before upsert
   - [x] **NEW**: Null checks with ArgumentNullException.ThrowIfNull()
-  - [ ] Optional data validation via `IValidatableObject` or custom validator
-
-- [ ] **Retry policies**
-  - [ ] Configurable retry on `SQLITE_BUSY` and `SQLITE_LOCKED`
-  - [ ] Exponential backoff with jitter
-  - [ ] Optional Polly integration
 
 ---
 
@@ -234,7 +228,6 @@ The implementation has progressed beyond the original Phase 1 scope with several
   - [x] **NEW**: Debug-level logging for all operations (CreateTable, Upsert, Get, Delete, etc.)
   - [x] **NEW**: Information-level logging for significant events
   - [x] **NEW**: NullLogger support when no logger is provided
-  - [ ] Log slow queries (configurable threshold)
 
 ---
 
