@@ -308,9 +308,10 @@ internal static class ExpressionToJsonPath
             return EvaluateMethodCall(methodCall);
         }
 
-        throw new NotSupportedException(
-            $"Cannot evaluate expression of type '{expression.NodeType}'. " +
-            "Supported: constants, field/property access, and simple method calls.");
+        // Fallback: Compile and execute the expression to get the value
+        var lambda = Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
+        var compiled = lambda.Compile();
+        return compiled() ?? throw new InvalidOperationException("Expression evaluated to null");
     }
 
     /// <summary>
