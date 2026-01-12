@@ -355,11 +355,7 @@ internal sealed class DocumentStore : IDocumentStore
             tableName, jsonPath, value);
 
         var jsonResults = await _connection.QueryAsync<string>(sql, new { Value = value }).ConfigureAwait(false);
-        var documents = jsonResults
-            .Select(json => JsonHelper.Deserialize<T>(json))
-            .Where(doc => doc != null)
-            .Select(doc => doc!)
-            .ToList();
+        var documents = DeserializeResults<T>(jsonResults);
 
         _logger.LogDebug("Query returned {Count} documents from table {TableName}", documents.Count, tableName);
 
@@ -386,15 +382,33 @@ internal sealed class DocumentStore : IDocumentStore
         _logger.LogDebug("Querying table {TableName} with WHERE clause: {WhereClause}", tableName, whereClause);
 
         var jsonResults = await _connection.QueryAsync<string>(sql, parameters).ConfigureAwait(false);
-        var documents = jsonResults
-            .Select(json => JsonHelper.Deserialize<T>(json))
-            .Where(doc => doc != null)
-            .Select(doc => doc!)
-            .ToList();
+        var documents = DeserializeResults<T>(jsonResults);
 
         _logger.LogDebug("Query returned {Count} documents from table {TableName}", documents.Count, tableName);
 
         return documents;
+    }
+
+    /// <summary>
+    /// Deserializes JSON results to a list of typed objects.
+    /// Uses a single-pass loop to avoid LINQ overhead and multiple enumerator allocations.
+    /// </summary>
+    private static List<T> DeserializeResults<T>(IEnumerable<string> jsonResults)
+    {
+        // Pre-size list if we can determine count without enumeration
+        var results = jsonResults is ICollection<string> collection
+            ? new List<T>(collection.Count)
+            : [];
+
+        foreach (var json in jsonResults)
+        {
+            if (JsonHelper.Deserialize<T>(json) is { } item)
+            {
+                results.Add(item);
+            }
+        }
+
+        return results;
     }
 
     /// <inheritdoc />
