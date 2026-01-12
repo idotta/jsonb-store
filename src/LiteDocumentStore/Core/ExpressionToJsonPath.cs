@@ -283,32 +283,108 @@ internal static class ExpressionToJsonPath
 
     private static object GetConstantValue(Expression expression)
     {
+        // Handle boxing conversions
+        if (expression is UnaryExpression { NodeType: ExpressionType.Convert } unary)
+        {
+            expression = unary.Operand;
+        }
+
         // Handle constant expressions
         if (expression is ConstantExpression constant)
         {
             return constant.Value ?? throw new InvalidOperationException("Constant value cannot be null");
         }
 
-        // Handle member access on constants (e.g., variables in closure)
-        if (expression is MemberExpression memberExpr && memberExpr.Expression is ConstantExpression constantExpr)
+        // Handle member access chains using reflection (avoids expensive Expression.Compile())
+        // This handles patterns like: closure.field, closure.field.property, obj.Property.SubProperty
+        if (expression is MemberExpression memberExpr)
         {
-            var member = memberExpr.Member;
-            if (member is FieldInfo field)
-            {
-                return field.GetValue(constantExpr.Value)
-                    ?? throw new InvalidOperationException($"Field '{field.Name}' value cannot be null");
-            }
-            if (member is PropertyInfo property)
-            {
-                return property.GetValue(constantExpr.Value)
-                    ?? throw new InvalidOperationException($"Property '{property.Name}' value cannot be null");
-            }
+            return EvaluateMemberExpression(memberExpr);
         }
 
-        // Compile and execute the expression to get the value
+        // Handle method calls (e.g., ToString(), GetValue())
+        if (expression is MethodCallExpression methodCall)
+        {
+            return EvaluateMethodCall(methodCall);
+        }
+
+        // Fallback: Compile and execute the expression to get the value
         var lambda = Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
         var compiled = lambda.Compile();
         return compiled() ?? throw new InvalidOperationException("Expression evaluated to null");
+    }
+
+    /// <summary>
+    /// Evaluates a member expression chain using reflection.
+    /// Handles nested property/field access like: closure.field.Property.SubProperty
+    /// </summary>
+    private static object EvaluateMemberExpression(MemberExpression memberExpr)
+    {
+        // Build the chain of member accesses from innermost to outermost
+        var memberChain = new List<MemberInfo>();
+        Expression? current = memberExpr;
+
+        while (current is MemberExpression member)
+        {
+            memberChain.Add(member.Member);
+            current = member.Expression;
+        }
+
+        // The innermost expression should be a constant (the closure or static field)
+        object? value;
+        if (current is ConstantExpression constantExpr)
+        {
+            value = constantExpr.Value;
+        }
+        else if (current is null)
+        {
+            // Static member access - start with null
+            value = null;
+        }
+        else
+        {
+            throw new NotSupportedException(
+                $"Member expression must be rooted in a constant. Got: {current.NodeType}");
+        }
+
+        // Traverse the chain from innermost to outermost (reverse order)
+        for (int i = memberChain.Count - 1; i >= 0; i--)
+        {
+            var member = memberChain[i];
+            value = member switch
+            {
+                FieldInfo field => field.GetValue(value),
+                PropertyInfo property => property.GetValue(value),
+                _ => throw new NotSupportedException($"Unsupported member type: {member.MemberType}")
+            };
+        }
+
+        return value ?? throw new InvalidOperationException("Expression evaluated to null");
+    }
+
+    /// <summary>
+    /// Evaluates simple method calls using reflection.
+    /// Supports instance methods on evaluated objects and static methods.
+    /// </summary>
+    private static object EvaluateMethodCall(MethodCallExpression methodCall)
+    {
+        // Evaluate the instance (if not static)
+        object? instance = null;
+        if (methodCall.Object != null)
+        {
+            instance = GetConstantValue(methodCall.Object);
+        }
+
+        // Evaluate arguments
+        var args = new object?[methodCall.Arguments.Count];
+        for (int i = 0; i < methodCall.Arguments.Count; i++)
+        {
+            args[i] = GetConstantValue(methodCall.Arguments[i]);
+        }
+
+        // Invoke the method
+        var result = methodCall.Method.Invoke(instance, args);
+        return result ?? throw new InvalidOperationException($"Method '{methodCall.Method.Name}' returned null");
     }
 
     private static bool IsIndexerAccess(MethodCallExpression methodCall)

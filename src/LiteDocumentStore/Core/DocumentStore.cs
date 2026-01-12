@@ -80,9 +80,7 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateCreateTableSql(tableName);
 
-        _logger.LogDebug("Creating table {TableName} for type {TypeName}", tableName, typeof(T).Name);
         await _connection.ExecuteAsync(sql);
-        _logger.LogInformation("Table {TableName} created successfully", tableName);
     }
 
     /// <inheritdoc />
@@ -102,15 +100,11 @@ internal sealed class DocumentStore : IDocumentStore
         var jsonBytes = JsonHelper.SerializeToUtf8Bytes(data);
         var sql = SqlGenerator.GenerateUpsertSql(tableName);
 
-        _logger.LogDebug("Upserting document {Id} into table {TableName}", id, tableName);
-
         var affectedRows = await _connection.ExecuteAsync(sql, new
         {
             Id = id,
             Data = jsonBytes
         });
-
-        _logger.LogDebug("Document {Id} upserted successfully in table {TableName}", id, tableName);
 
         return affectedRows;
     }
@@ -130,9 +124,14 @@ internal sealed class DocumentStore : IDocumentStore
             return 0;
         }
 
-        // Validate all items
+        var tableName = _tableNamingConvention.GetTableName<T>();
+        var sql = SqlGenerator.GenerateBulkUpsertSql(tableName, itemsList.Count);
+
+        // Build dynamic parameters object
+        var parameters = new DynamicParameters();
         for (int i = 0; i < itemsList.Count; i++)
         {
+            // Validate all items
             if (string.IsNullOrWhiteSpace(itemsList[i].id))
             {
                 throw new ArgumentException($"ID at index {i} cannot be null or empty.", nameof(items));
@@ -141,17 +140,7 @@ internal sealed class DocumentStore : IDocumentStore
             {
                 throw new ArgumentException($"Data at index {i} cannot be null.", nameof(items));
             }
-        }
 
-        var tableName = _tableNamingConvention.GetTableName<T>();
-        var sql = SqlGenerator.GenerateBulkUpsertSql(tableName, itemsList.Count);
-
-        _logger.LogDebug("Bulk upserting {Count} documents into table {TableName}", itemsList.Count, tableName);
-
-        // Build dynamic parameters object
-        var parameters = new DynamicParameters();
-        for (int i = 0; i < itemsList.Count; i++)
-        {
             var (id, data) = itemsList[i];
             var jsonBytes = JsonHelper.SerializeToUtf8Bytes(data);
             parameters.Add($"Id{i}", id);
@@ -159,9 +148,6 @@ internal sealed class DocumentStore : IDocumentStore
         }
 
         var affectedRows = await _connection.ExecuteAsync(sql, parameters);
-
-        _logger.LogInformation("Bulk upserted {Count} documents into table {TableName}, affected rows: {AffectedRows}",
-            itemsList.Count, tableName, affectedRows);
 
         return affectedRows;
     }
@@ -180,8 +166,6 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateGetByIdSql(tableName);
 
-        _logger.LogDebug("Retrieving document {Id} from table {TableName}", id, tableName);
-
         var json = await _connection.QueryFirstOrDefaultAsync<string>(sql, new { Id = id });
 
         if (string.IsNullOrEmpty(json))
@@ -190,9 +174,7 @@ internal sealed class DocumentStore : IDocumentStore
             return default;
         }
 
-        var result = JsonHelper.Deserialize<T>(json);
-        _logger.LogDebug("Document {Id} retrieved successfully from table {TableName}", id, tableName);
-        return result;
+        return JsonHelper.Deserialize<T>(json);
     }
 
     /// <inheritdoc />
@@ -203,8 +185,6 @@ internal sealed class DocumentStore : IDocumentStore
 
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateGetAllSql(tableName);
-
-        _logger.LogDebug("Retrieving all documents from table {TableName}", tableName);
 
         var jsonResults = await _connection.QueryAsync<string>(sql);
 
@@ -218,7 +198,6 @@ internal sealed class DocumentStore : IDocumentStore
             }
         }
 
-        _logger.LogDebug("Retrieved {Count} documents from table {TableName}", results.Count, tableName);
         return results;
     }
 
@@ -236,16 +215,10 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateDeleteSql(tableName);
 
-        _logger.LogDebug("Deleting document {Id} from table {TableName}", id, tableName);
-
         var affectedRows = await _connection.ExecuteAsync(sql, new { Id = id });
         var deleted = affectedRows > 0;
 
-        if (deleted)
-        {
-            _logger.LogInformation("Document {Id} deleted from table {TableName}", id, tableName);
-        }
-        else
+        if (!deleted)
         {
             _logger.LogDebug("Document {Id} not found in table {TableName} (nothing to delete)", id, tableName);
         }
@@ -280,8 +253,6 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateBulkDeleteSql(tableName, idsList.Count);
 
-        _logger.LogDebug("Bulk deleting {Count} documents from table {TableName}", idsList.Count, tableName);
-
         // Build dynamic parameters object
         var parameters = new DynamicParameters();
         for (int i = 0; i < idsList.Count; i++)
@@ -290,9 +261,6 @@ internal sealed class DocumentStore : IDocumentStore
         }
 
         var affectedRows = await _connection.ExecuteAsync(sql, parameters);
-
-        _logger.LogInformation("Bulk deleted {Count} documents from table {TableName}, affected rows: {AffectedRows}",
-            idsList.Count, tableName, affectedRows);
 
         return affectedRows;
     }
@@ -311,13 +279,7 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateExistsSql(tableName);
 
-        _logger.LogDebug("Checking existence of document {Id} in table {TableName}", id, tableName);
-
-        var exists = await _connection.ExecuteScalarAsync<bool>(sql, new { Id = id });
-
-        _logger.LogDebug("Document {Id} exists in table {TableName}: {Exists}", id, tableName, exists);
-
-        return exists;
+        return await _connection.ExecuteScalarAsync<bool>(sql, new { Id = id });
     }
 
     /// <inheritdoc />
@@ -329,13 +291,7 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateCountSql(tableName);
 
-        _logger.LogDebug("Counting documents in table {TableName}", tableName);
-
-        var count = await _connection.ExecuteScalarAsync<long>(sql);
-
-        _logger.LogDebug("Table {TableName} contains {Count} documents", tableName, count);
-
-        return count;
+        return await _connection.ExecuteScalarAsync<long>(sql);
     }
 
     /// <inheritdoc />
@@ -354,18 +310,8 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var sql = SqlGenerator.GenerateQueryByJsonPathSql(tableName, jsonPath);
 
-        _logger.LogDebug("Querying table {TableName} by JSON path {JsonPath} with value {Value}",
-            tableName, jsonPath, value);
-
         var jsonResults = await _connection.QueryAsync<string>(sql, new { Value = value }).ConfigureAwait(false);
-        var documents = jsonResults
-            .Select(json => JsonHelper.Deserialize<T>(json))
-            .Where(doc => doc != null)
-            .Select(doc => doc!)
-            .ToList();
-
-        _logger.LogDebug("Query returned {Count} documents from table {TableName}", documents.Count, tableName);
-
+        var documents = DeserializeResults<T>(jsonResults);
         return documents;
     }
 
@@ -386,18 +332,32 @@ internal sealed class DocumentStore : IDocumentStore
         var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate, virtualColumns);
         var sql = SqlGenerator.GenerateQueryWithWhereSql(tableName, whereClause);
 
-        _logger.LogDebug("Querying table {TableName} with WHERE clause: {WhereClause}", tableName, whereClause);
-
         var jsonResults = await _connection.QueryAsync<string>(sql, parameters).ConfigureAwait(false);
-        var documents = jsonResults
-            .Select(json => JsonHelper.Deserialize<T>(json))
-            .Where(doc => doc != null)
-            .Select(doc => doc!)
-            .ToList();
-
-        _logger.LogDebug("Query returned {Count} documents from table {TableName}", documents.Count, tableName);
+        var documents = DeserializeResults<T>(jsonResults);
 
         return documents;
+    }
+
+    /// <summary>
+    /// Deserializes JSON results to a list of typed objects.
+    /// Uses a single-pass loop to avoid LINQ overhead and multiple enumerator allocations.
+    /// </summary>
+    private static List<T> DeserializeResults<T>(IEnumerable<string> jsonResults)
+    {
+        // Pre-size list if we can determine count without enumeration
+        var results = jsonResults is ICollection<string> collection
+            ? new List<T>(collection.Count)
+            : [];
+
+        foreach (var json in jsonResults)
+        {
+            if (JsonHelper.Deserialize<T>(json) is { } item)
+            {
+                results.Add(item);
+            }
+        }
+
+        return results;
     }
 
     /// <inheritdoc />
@@ -452,9 +412,6 @@ internal sealed class DocumentStore : IDocumentStore
         var pathString = ExtractJsonPath(jsonPath);
         var finalIndexName = indexName ?? GenerateIndexName(tableName, pathString);
 
-        _logger.LogDebug("Creating index {IndexName} on table {TableName} for path {JsonPath}",
-            finalIndexName, tableName, pathString);
-
         // Check if index already exists
         var indexExists = await _connection.QueryFirstOrDefaultAsync<int>(
             SqlGenerator.GenerateCheckIndexExistsSql(),
@@ -468,9 +425,6 @@ internal sealed class DocumentStore : IDocumentStore
 
         var sql = SqlGenerator.GenerateCreateJsonIndexSql(tableName, finalIndexName, pathString);
         await _connection.ExecuteAsync(sql).ConfigureAwait(false);
-
-        _logger.LogInformation("Index {IndexName} created successfully on table {TableName} for path {JsonPath}",
-            finalIndexName, tableName, pathString);
     }
 
     /// <inheritdoc />
@@ -488,9 +442,6 @@ internal sealed class DocumentStore : IDocumentStore
         var pathStrings = jsonPaths.Select(ExtractJsonPath);
         var finalIndexName = indexName ?? GenerateCompositeIndexName(tableName, pathStrings);
 
-        _logger.LogDebug("Creating composite index {IndexName} on table {TableName} for paths [{JsonPaths}]",
-            finalIndexName, tableName, string.Join(", ", pathStrings));
-
         // Check if index already exists
         var indexExists = await _connection.QueryFirstOrDefaultAsync<int>(
             SqlGenerator.GenerateCheckIndexExistsSql(),
@@ -504,9 +455,6 @@ internal sealed class DocumentStore : IDocumentStore
 
         var sql = SqlGenerator.GenerateCreateCompositeJsonIndexSql(tableName, finalIndexName, pathStrings);
         await _connection.ExecuteAsync(sql).ConfigureAwait(false);
-
-        _logger.LogInformation("Composite index {IndexName} created successfully on table {TableName} for paths [{JsonPaths}]",
-            finalIndexName, tableName, string.Join(", ", pathStrings));
     }
 
     /// <summary>
@@ -597,9 +545,6 @@ internal sealed class DocumentStore : IDocumentStore
         var tableName = _tableNamingConvention.GetTableName<T>();
         var pathString = ExtractJsonPath(jsonPath);
 
-        _logger.LogDebug("Adding virtual column {ColumnName} to table {TableName} for path {JsonPath}",
-            columnName, tableName, pathString);
-
         // Check if column already exists using SchemaIntrospector
         var introspector = new SchemaIntrospector(_connection);
         var columnExists = await introspector.ColumnExistsAsync(tableName, columnName).ConfigureAwait(false);
@@ -613,9 +558,6 @@ internal sealed class DocumentStore : IDocumentStore
         {
             var addColumnSql = SqlGenerator.GenerateAddVirtualColumnSql(tableName, columnName, pathString, columnType);
             await _connection.ExecuteAsync(addColumnSql).ConfigureAwait(false);
-
-            _logger.LogInformation("Virtual column {ColumnName} created successfully on table {TableName} for path {JsonPath}",
-                columnName, tableName, pathString);
         }
 
         // Register the virtual column in cache (whether newly created or already existing)
@@ -639,9 +581,6 @@ internal sealed class DocumentStore : IDocumentStore
             {
                 var createIndexSql = SqlGenerator.GenerateCreateColumnIndexSql(tableName, indexName, columnName);
                 await _connection.ExecuteAsync(createIndexSql).ConfigureAwait(false);
-
-                _logger.LogInformation("Index {IndexName} created successfully on virtual column {ColumnName}",
-                    indexName, columnName);
             }
         }
     }
@@ -659,14 +598,7 @@ internal sealed class DocumentStore : IDocumentStore
         var fieldSelections = ExpressionToJsonPath.ExtractFieldSelections(selector);
         var sql = SqlGenerator.GenerateSelectFieldsSql(tableName, fieldSelections);
 
-        _logger.LogDebug("Selecting fields {Fields} from table {TableName}",
-            string.Join(", ", fieldSelections.Keys), tableName);
-
         var results = await _connection.QueryAsync<TResult>(sql).ConfigureAwait(false);
-
-        _logger.LogDebug("Selected {Count} projected records from table {TableName}",
-            results.Count(), tableName);
-
         return results;
     }
 
@@ -690,13 +622,7 @@ internal sealed class DocumentStore : IDocumentStore
         var (whereClause, parameters) = ExpressionToJsonPath.TranslatePredicate(predicate, virtualColumns);
         var sql = SqlGenerator.GenerateSelectFieldsWithWhereSql(tableName, fieldSelections, whereClause);
 
-        _logger.LogDebug("Selecting fields {Fields} from table {TableName} with WHERE clause: {WhereClause}",
-            string.Join(", ", fieldSelections.Keys), tableName, whereClause);
-
         var results = await _connection.QueryAsync<TResult>(sql, parameters).ConfigureAwait(false);
-
-        _logger.LogDebug("Selected {Count} projected records from table {TableName}",
-            results.Count(), tableName);
 
         return results;
     }

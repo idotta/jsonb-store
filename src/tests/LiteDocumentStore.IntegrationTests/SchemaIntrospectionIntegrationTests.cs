@@ -83,7 +83,7 @@ public class SchemaIntrospectionIntegrationTests : IAsyncLifetime
         var columns = (await _introspector.GetColumnsAsync("Customer")).ToList();
 
         // Assert
-        Assert.Equal(4, columns.Count); // id, data, created_at, updated_at
+        Assert.Equal(2, columns.Count); // id, data
 
         var idColumn = columns.FirstOrDefault(c => c.Name == "id");
         Assert.NotNull(idColumn);

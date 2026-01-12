@@ -63,9 +63,7 @@ _connection = connection ?? throw new ArgumentNullException(nameof(connection));
 -- Use snake_case for SQL identifiers
 CREATE TABLE [Customer] (
     id TEXT PRIMARY KEY,
-    data BLOB NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    data BLOB NOT NULL
 );
 
 -- Always bracket table names (derived from type names)

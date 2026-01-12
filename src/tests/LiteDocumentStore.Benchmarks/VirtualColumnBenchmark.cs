@@ -95,7 +95,6 @@ public class VirtualColumnBenchmark
 
         // Add virtual columns with indexes to first store
         await _storeWithVirtual.AddVirtualColumnAsync<Product>(p => p.Category, "category", createIndex: true);
-        await _storeWithVirtual.AddVirtualColumnAsync<Product>(p => p.Price, "price", createIndex: true, columnType: "REAL");
         await _storeWithVirtual.AddVirtualColumnAsync<Product>(p => p.Sku, "sku", createIndex: true);
         await _storeWithVirtual.AddVirtualColumnAsync<Product>(p => p.Metadata.Brand, "brand", createIndex: true);
 
@@ -136,20 +135,6 @@ public class VirtualColumnBenchmark
     public async Task<int> Query_WithVirtualColumn_ByCategory()
     {
         var results = await _storeWithVirtual.QueryAsync<Product>(p => p.Category == "Category 25");
-        return results.Count();
-    }
-
-    [Benchmark(Description = "Query by price WITHOUT virtual column")]
-    public async Task<int> Query_WithoutVirtualColumn_ByPrice()
-    {
-        var results = await _storeWithoutVirtual.QueryAsync<Product>(p => p.Price > 50);
-        return results.Count();
-    }
-
-    [Benchmark(Description = "Query by price WITH virtual column and index")]
-    public async Task<int> Query_WithVirtualColumn_ByPrice()
-    {
-        var results = await _storeWithVirtual.QueryAsync<Product>(p => p.Price > 50);
         return results.Count();
     }
 
@@ -194,22 +179,6 @@ public class VirtualColumnBenchmark
     {
         var results = await _storeWithoutVirtual.Connection.QueryAsync<byte[]>(
             "SELECT data FROM Product WHERE json_extract(data, '$.Category') = 'Category 25'");
-        return results.Count();
-    }
-
-    [Benchmark(Description = "Raw SQL: Price query (indexed)")]
-    public async Task<int> Query_RawSQL_WithIndex_ByPrice()
-    {
-        var results = await _storeWithVirtual.Connection.QueryAsync<byte[]>(
-            "SELECT data FROM Product WHERE price > 50");
-        return results.Count();
-    }
-
-    [Benchmark(Description = "Raw SQL: Price query (no index)")]
-    public async Task<int> Query_RawSQL_NoIndex_ByPrice()
-    {
-        var results = await _storeWithoutVirtual.Connection.QueryAsync<byte[]>(
-            "SELECT data FROM Product WHERE CAST(json_extract(data, '$.Price') AS REAL) > 50");
         return results.Count();
     }
 

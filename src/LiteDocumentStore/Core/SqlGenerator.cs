@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace LiteDocumentStore;
 
 /// <summary>
@@ -14,9 +16,7 @@ internal static class SqlGenerator
         return $@"
             CREATE TABLE IF NOT EXISTS [{tableName}] (
                 id TEXT PRIMARY KEY,
-                data BLOB NOT NULL,
-                created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-                updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+                data BLOB NOT NULL
             )";
     }
 
@@ -26,11 +26,10 @@ internal static class SqlGenerator
     public static string GenerateUpsertSql(string tableName)
     {
         return $@"
-            INSERT INTO [{tableName}] (id, data, updated_at)
-            VALUES (@Id, jsonb(@Data), strftime('%s', 'now'))
+            INSERT INTO [{tableName}] (id, data)
+            VALUES (@Id, jsonb(@Data))
             ON CONFLICT(id) DO UPDATE SET
-                data = jsonb(@Data),
-                updated_at = strftime('%s', 'now')";
+                data = jsonb(@Data)";
     }
 
     /// <summary>
@@ -116,19 +115,22 @@ internal static class SqlGenerator
             throw new ArgumentException("Count must be greater than zero.", nameof(count));
         }
 
-        // Generate parameter placeholders for each item: (@Id0, jsonb(@Data0)), (@Id1, jsonb(@Data1)), ...
-        var valuesClauses = new List<string>(count);
+        // Use StringBuilder to avoid O(n) string allocations
+        // Estimated size: ~40 chars per value clause + ~100 chars for statement
+        var sb = new StringBuilder(100 + (count * 40));
+        sb.Append("INSERT INTO [").Append(tableName).Append("] (id, data) VALUES ");
+
         for (int i = 0; i < count; i++)
         {
-            valuesClauses.Add($"(@Id{i}, jsonb(@Data{i}), strftime('%s', 'now'))");
+            if (i > 0)
+            {
+                sb.Append(", ");
+            }
+            sb.Append("(@Id").Append(i).Append(", jsonb(@Data").Append(i).Append("))");
         }
 
-        return $@"
-            INSERT INTO [{tableName}] (id, data, updated_at)
-            VALUES {string.Join(", ", valuesClauses)}
-            ON CONFLICT(id) DO UPDATE SET
-                data = excluded.data,
-                updated_at = excluded.updated_at";
+        sb.Append(" ON CONFLICT(id) DO UPDATE SET data = excluded.data");
+        return sb.ToString();
     }
 
     /// <summary>
@@ -143,14 +145,22 @@ internal static class SqlGenerator
             throw new ArgumentException("Count must be greater than zero.", nameof(count));
         }
 
-        // Generate parameter placeholders for each ID: @Id0, @Id1, @Id2, ...
-        var idParameters = new List<string>(count);
+        // Use StringBuilder to avoid O(n) string allocations
+        // Estimated size: ~6 chars per param + ~50 chars for statement
+        var sb = new StringBuilder(50 + (count * 6));
+        sb.Append("DELETE FROM [").Append(tableName).Append("] WHERE id IN (");
+
         for (int i = 0; i < count; i++)
         {
-            idParameters.Add($"@Id{i}");
+            if (i > 0)
+            {
+                sb.Append(", ");
+            }
+            sb.Append("@Id").Append(i);
         }
 
-        return $"DELETE FROM [{tableName}] WHERE id IN ({string.Join(", ", idParameters)})";
+        sb.Append(')');
+        return sb.ToString();
     }
 
     /// <summary>
