@@ -24,11 +24,6 @@ internal static class JsonHelper
         WriteIndented = false
     };
 
-    private static readonly JsonWriterOptions WriterOptions = new()
-    {
-        Indented = false
-    };
-
     /// <summary>
     /// Serializes an object to UTF-8 encoded JSON bytes for JSONB storage.
     /// This is the most efficient path for SQLite JSONB operations.
