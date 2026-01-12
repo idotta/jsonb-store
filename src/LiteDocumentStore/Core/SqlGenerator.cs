@@ -16,9 +16,7 @@ internal static class SqlGenerator
         return $@"
             CREATE TABLE IF NOT EXISTS [{tableName}] (
                 id TEXT PRIMARY KEY,
-                data BLOB NOT NULL,
-                created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-                updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+                data BLOB NOT NULL
             )";
     }
 
@@ -28,11 +26,10 @@ internal static class SqlGenerator
     public static string GenerateUpsertSql(string tableName)
     {
         return $@"
-            INSERT INTO [{tableName}] (id, data, updated_at)
-            VALUES (@Id, jsonb(@Data), strftime('%s', 'now'))
+            INSERT INTO [{tableName}] (id, data)
+            VALUES (@Id, jsonb(@Data))
             ON CONFLICT(id) DO UPDATE SET
-                data = jsonb(@Data),
-                updated_at = strftime('%s', 'now')";
+                data = jsonb(@Data)";
     }
 
     /// <summary>
@@ -119,9 +116,9 @@ internal static class SqlGenerator
         }
 
         // Use StringBuilder to avoid O(n) string allocations
-        // Estimated size: ~55 chars per value clause + ~100 chars for statement
-        var sb = new StringBuilder(100 + (count * 55));
-        sb.Append("INSERT INTO [").Append(tableName).Append("] (id, data, updated_at) VALUES ");
+        // Estimated size: ~40 chars per value clause + ~100 chars for statement
+        var sb = new StringBuilder(100 + (count * 40));
+        sb.Append("INSERT INTO [").Append(tableName).Append("] (id, data) VALUES ");
 
         for (int i = 0; i < count; i++)
         {
@@ -129,10 +126,10 @@ internal static class SqlGenerator
             {
                 sb.Append(", ");
             }
-            sb.Append("(@Id").Append(i).Append(", jsonb(@Data").Append(i).Append("), strftime('%s', 'now'))");
+            sb.Append("(@Id").Append(i).Append(", jsonb(@Data").Append(i).Append("))");
         }
 
-        sb.Append(" ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at");
+        sb.Append(" ON CONFLICT(id) DO UPDATE SET data = excluded.data");
         return sb.ToString();
     }
 

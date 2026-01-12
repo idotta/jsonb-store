@@ -211,16 +211,14 @@ await repo.Connection.ExecuteAsync(@"
     CREATE TABLE IF NOT EXISTS [Customer] (
         id TEXT PRIMARY KEY,
         data BLOB NOT NULL,
-        version INTEGER NOT NULL DEFAULT 1,
-        updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+        version INTEGER NOT NULL DEFAULT 1
     )");
 
 // Update with version check
 var affected = await repo.Connection.ExecuteAsync(@"
     UPDATE [Customer] 
     SET data = jsonb(@Data), 
-        version = version + 1,
-        updated_at = strftime('%s', 'now')
+        version = version + 1
     WHERE id = @Id AND version = @ExpectedVersion",
     new { Id = id, Data = json, ExpectedVersion = version });
 
