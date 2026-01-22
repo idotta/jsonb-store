@@ -69,7 +69,7 @@ public sealed class SchemaIntrospector
 
         // Use table_xinfo instead of table_info to include generated columns
         var sql = $"PRAGMA table_xinfo([{tableName}])";
-        
+
         await using var command = _connection.CreateCommand();
         command.CommandText = sql;
         await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);

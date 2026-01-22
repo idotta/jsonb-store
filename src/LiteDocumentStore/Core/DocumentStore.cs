@@ -389,7 +389,7 @@ internal sealed class DocumentStore : IDocumentStore
             {
                 await action(transaction).ConfigureAwait(false);
             }).ConfigureAwait(false);
-            
+
             transaction.Commit();
         }
         catch

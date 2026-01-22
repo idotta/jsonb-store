@@ -78,7 +78,7 @@ internal static class AdoNetExtensions
     {
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
-        
+
         // Auto-detect transaction if not provided
         command.Transaction = (transaction as SqliteTransaction) ?? GetActiveTransaction(connection);
 
@@ -101,7 +101,7 @@ internal static class AdoNetExtensions
     {
         using var command = connection.CreateCommand();
         command.CommandText = sql;
-        
+
         // Auto-detect transaction if not provided
         command.Transaction = (transaction as SqliteTransaction) ?? GetActiveTransaction(connection);
 
@@ -221,7 +221,7 @@ internal static class AdoNetExtensions
         object? parameters = null)
     {
         var result = await QueryFirstOrDefaultAsync<T>(connection, sql, parameters).ConfigureAwait(false);
-        
+
         // Handle both reference types (null check) and value types (default comparison)
         if (EqualityComparer<T>.Default.Equals(result, default(T)))
         {
@@ -383,7 +383,7 @@ internal static class AdoNetExtensions
         var type = typeof(T);
 
         // Handle simple types that map directly to a single column
-        if (type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || 
+        if (type.IsPrimitive || type == typeof(string) || type == typeof(decimal) ||
             type == typeof(DateTime) || type == typeof(DateTimeOffset) || type == typeof(Guid))
         {
             return ConvertValue<T>(reader.GetValue(0));
@@ -391,12 +391,12 @@ internal static class AdoNetExtensions
 
         // For complex types, map all columns to properties
         var obj = Activator.CreateInstance<T>();
-        
+
         for (int i = 0; i < reader.FieldCount; i++)
         {
             var fieldName = reader.GetName(i);
             var property = type.GetProperty(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-            
+
             if (property != null && property.CanWrite)
             {
                 var value = reader.GetValue(i);
@@ -477,7 +477,7 @@ internal static class AdoNetExtensions
         {
             return ambient;
         }
-        
+
         return null;
     }
 }
