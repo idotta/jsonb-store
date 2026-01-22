@@ -1,3 +1,4 @@
+using LiteDocumentStore.Data;
 using Microsoft.Data.Sqlite;
 
 namespace LiteDocumentStore;

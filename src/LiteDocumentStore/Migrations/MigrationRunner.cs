@@ -1,5 +1,5 @@
 using System.Data;
-using Dapper;
+using LiteDocumentStore.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -25,9 +25,6 @@ public sealed class MigrationRunner
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _logger = logger ?? NullLogger<MigrationRunner>.Instance;
-
-        // Register DateTimeOffset handler for Dapper if not already registered
-        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
     }
 
     /// <summary>
@@ -104,8 +101,11 @@ public sealed class MigrationRunner
         using var transaction = _connection.BeginTransaction();
         try
         {
-            // Execute the migration
-            await migration.UpAsync(_connection).ConfigureAwait(false);
+            // Execute the migration within the ambient transaction scope
+            await AmbientTransaction.ExecuteInScopeAsync(transaction, async () =>
+            {
+                await migration.UpAsync(_connection).ConfigureAwait(false);
+            }).ConfigureAwait(false);
 
             // Record the migration
             var sql = $@"
@@ -185,8 +185,11 @@ public sealed class MigrationRunner
         using var transaction = _connection.BeginTransaction();
         try
         {
-            // Execute the rollback
-            await migration.DownAsync(_connection).ConfigureAwait(false);
+            // Execute the rollback within the ambient transaction scope
+            await AmbientTransaction.ExecuteInScopeAsync(transaction, async () =>
+            {
+                await migration.DownAsync(_connection).ConfigureAwait(false);
+            }).ConfigureAwait(false);
 
             // Remove the migration record
             var deleteSql = $@"DELETE FROM [{MigrationTableName}] WHERE version = @Version";

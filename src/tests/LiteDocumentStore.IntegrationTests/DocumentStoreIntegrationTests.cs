@@ -1,4 +1,4 @@
-using Dapper;
+using LiteDocumentStore.Data;
 using Microsoft.Data.Sqlite;
 using Xunit;
 
@@ -740,12 +740,22 @@ public class DocumentStoreIntegrationTests : IDisposable
 
         // Assert - Verify the index exists and can be used
         // Note: JSON path uses PascalCase to match default System.Text.Json serialization
-        var queryPlan = await _connection.QueryAsync<dynamic>(
+        // EXPLAIN QUERY PLAN returns: id, parent, notused, detail
+        var queryPlanResults = await _connection.QueryAsync<QueryPlanRow>(
             "EXPLAIN QUERY PLAN SELECT json(data) FROM Person WHERE json_extract(data, '$.Email') = 'person50@example.com'");
 
-        // The query plan should mention the index
-        var planText = string.Join(" ", queryPlan.Select(p => p.detail));
+        // The query plan should mention the index in the detail column
+        var planText = string.Join(" ", queryPlanResults.Select(r => r.detail));
         Assert.Contains("idx_", planText.ToLower());
+    }
+
+    // Helper class for EXPLAIN QUERY PLAN results
+    private class QueryPlanRow
+    {
+        public int id { get; set; }
+        public int parent { get; set; }
+        public int notused { get; set; }
+        public string detail { get; set; } = "";
     }
 
     [Fact]
@@ -991,9 +1001,9 @@ public class DocumentStoreIntegrationTests : IDisposable
         await _store.CreateTableAsync<Person>();
         await _store.UpsertAsync("p1", new Person { Name = "John Doe", Age = 30, Email = "john@example.com" });
 
-        // Act - Use anonymous type for projection
-        var results = await _store.SelectAsync<Person, dynamic>(
-            p => new { p.Name, p.Age });
+        // Act - Use concrete DTO for projection (anonymous types not supported without Dapper's dynamic features)
+        var results = await _store.SelectAsync<Person, PersonProjection>(
+            p => new PersonProjection { Name = p.Name, Age = p.Age });
 
         // Assert
         var resultList = results.ToList();
@@ -1065,6 +1075,7 @@ public class DocumentStoreIntegrationTests : IDisposable
     {
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public int Age { get; set; }
     }
 
     private class PersonCityProjection

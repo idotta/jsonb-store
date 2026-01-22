@@ -2,7 +2,7 @@ using LiteDocumentStore.Exceptions;
 using Microsoft.Data.Sqlite;
 using System.Text.Json;
 using Xunit;
-using Dapper;
+using LiteDocumentStore.Data;
 
 namespace LiteDocumentStore.IntegrationTests;
 
