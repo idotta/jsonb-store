@@ -1,4 +1,4 @@
-using Dapper;
+using LiteDocumentStore.Data;
 using Microsoft.Data.Sqlite;
 using Xunit;
 
@@ -58,13 +58,15 @@ public class VirtualColumnIntegrationTests : IDisposable
                 c INTEGER GENERATED ALWAYS AS (a + b)
             )");
 
-        var cols1 = (await memConnection.QueryAsync("PRAGMA table_xinfo(Test1)")).ToList();
-        var colNames = cols1.Select(c => (string)c.name).ToList();
+        // Use SchemaIntrospector to get column info (avoids dynamic)
+        var introspector = new SchemaIntrospector(memConnection);
+        var cols1 = await introspector.GetColumnsAsync("Test1");
+        var colNames = cols1.Select(c => c.Name).ToList();
 
         await memConnection.ExecuteAsync("INSERT INTO Test1 (id, a, b) VALUES (1, 10, 20)");
-        var result = await memConnection.QueryFirstOrDefaultAsync<dynamic>("SELECT id, a, b, c FROM Test1 WHERE id = 1");
+        var result = await memConnection.QueryFirstOrDefaultAsync<int>("SELECT c FROM Test1 WHERE id = 1");
 
-        Assert.True(colNames.Contains("c") || result?.c != null,
+        Assert.True(colNames.Contains("c") || result == 30,
             $"Generated column 'c' not found. Columns: [{string.Join(", ", colNames)}]. SQLite version: {version}");
     }
 
@@ -155,12 +157,20 @@ public class VirtualColumnIntegrationTests : IDisposable
         await _store.AddVirtualColumnAsync<Product>(x => x.Price, "price", columnType: "REAL");
 
         // Assert - Query using virtual columns directly
-        var results = await _connection.QueryAsync<dynamic>(
+        var results = await _connection.QueryAsync<ProductVirtualResult>(
             "SELECT id, category, price FROM Product WHERE category = 'Electronics' ORDER BY price");
         var resultList = results.ToList();
 
         Assert.Equal(2, resultList.Count);
-        Assert.Equal("Electronics", (string)resultList[0].category);
+        Assert.Equal("Electronics", resultList[0].category);
+    }
+
+    // Helper class for virtual column test
+    private class ProductVirtualResult
+    {
+        public string id { get; set; } = "";
+        public string category { get; set; } = "";
+        public decimal price { get; set; }
     }
 
     #endregion

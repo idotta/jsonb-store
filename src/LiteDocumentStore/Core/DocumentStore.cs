@@ -1,5 +1,5 @@
 using System.Data;
-using Dapper;
+using LiteDocumentStore.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -8,7 +8,7 @@ namespace LiteDocumentStore;
 
 /// <summary>
 /// A high-performance document store for storing JSON objects in SQLite.
-/// Uses Dapper for minimal mapping overhead and supports JSON document storage using JSONB format (SQLite 3.45+).
+/// Uses direct ADO.NET access for minimal overhead and supports JSON document storage using JSONB format (SQLite 3.45+).
 /// Can optionally own and manage the lifecycle of its SqliteConnection.
 /// </summary>
 internal sealed class DocumentStore : IDocumentStore
@@ -380,18 +380,16 @@ internal sealed class DocumentStore : IDocumentStore
         ObjectDisposedException.ThrowIf(_disposed, this);
         EnsureConnectionOpen();
 
-        // Use existing transaction if any?
-        // _connection.BeginTransaction() requires the connection to be open.
-        // It throws if a transaction is already active on this connection (SQLite supports one transaction per connection unless using Savepoints).
-        // Since we don't control the connection, we should check if we can start a transaction.
-        // However, standard ADO.NET SqliteConnection.BeginTransaction() will fail if currently in a transaction.
-        // For now, naive implementation: try to begin.
-        // Ideally we should support nested transactions or check, but simpler first.
-
         using var transaction = _connection.BeginTransaction();
         try
         {
-            await action(transaction).ConfigureAwait(false);
+            // Execute the action within the ambient transaction scope
+            // so that all database operations within the action automatically use this transaction
+            await AmbientTransaction.ExecuteInScopeAsync(transaction, async () =>
+            {
+                await action(transaction).ConfigureAwait(false);
+            }).ConfigureAwait(false);
+
             transaction.Commit();
         }
         catch

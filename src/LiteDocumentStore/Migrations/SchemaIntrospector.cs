@@ -1,4 +1,4 @@
-using Dapper;
+using LiteDocumentStore.Data;
 using Microsoft.Data.Sqlite;
 
 namespace LiteDocumentStore;
@@ -69,18 +69,27 @@ public sealed class SchemaIntrospector
 
         // Use table_xinfo instead of table_info to include generated columns
         var sql = $"PRAGMA table_xinfo([{tableName}])";
-        var pragmaResults = await _connection.QueryAsync(sql).ConfigureAwait(false);
 
-        return pragmaResults.Select(row => new ColumnInfo
+        await using var command = _connection.CreateCommand();
+        command.CommandText = sql;
+        await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);
+
+        var results = new List<ColumnInfo>();
+        while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            ColumnId = (long)row.cid,
-            Name = (string)row.name,
-            Type = (string)row.type,
-            NotNull = (long)row.notnull == 1,
-            DefaultValue = row.dflt_value,
-            IsPrimaryKey = (long)row.pk == 1,
-            IsHidden = (long)row.hidden != 0  // hidden=1 for virtual, hidden=2 for stored
-        });
+            results.Add(new ColumnInfo
+            {
+                ColumnId = reader.GetInt64(0),       // cid
+                Name = reader.GetString(1),          // name
+                Type = reader.GetString(2),          // type
+                NotNull = reader.GetInt64(3) == 1,   // notnull
+                DefaultValue = reader.IsDBNull(4) ? null : reader.GetValue(4), // dflt_value
+                IsPrimaryKey = reader.GetInt64(5) == 1, // pk
+                IsHidden = reader.GetInt64(6) != 0   // hidden (1=virtual, 2=stored)
+            });
+        }
+
+        return results;
     }
 
     /// <summary>

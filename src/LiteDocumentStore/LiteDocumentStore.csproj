@@ -11,8 +11,8 @@
     <PackageId>LiteDocumentStore</PackageId>
     <Title>LiteDocumentStore</Title>
     <Authors>idotta</Authors>
-    <Description>A high-performance, single-file application data format using C#, SQLite, and Dapper. Stores JSON data in SQLite's JSONB format for optimal performance.</Description>
-    <PackageTags>sqlite;jsonb;json;database;repository;async;dapper;orm;document-store</PackageTags>
+    <Description>A high-performance, single-file application data format using C#, SQLite, and ADO.NET. Stores JSON data in SQLite's JSONB format for optimal performance.</Description>
+    <PackageTags>sqlite;jsonb;json;database;repository;async;adonet;orm;document-store</PackageTags>
     <PackageProjectUrl>https://github.com/idotta/jsonb-store</PackageProjectUrl>
     <RepositoryUrl>https://github.com/idotta/jsonb-store</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -27,7 +27,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
