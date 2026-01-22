@@ -8,7 +8,7 @@ namespace LiteDocumentStore;
 
 /// <summary>
 /// A high-performance document store for storing JSON objects in SQLite.
-/// Uses Dapper for minimal mapping overhead and supports JSON document storage using JSONB format (SQLite 3.45+).
+/// Uses direct ADO.NET access for minimal overhead and supports JSON document storage using JSONB format (SQLite 3.45+).
 /// Can optionally own and manage the lifecycle of its SqliteConnection.
 /// </summary>
 internal sealed class DocumentStore : IDocumentStore

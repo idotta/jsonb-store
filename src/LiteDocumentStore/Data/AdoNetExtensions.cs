@@ -221,7 +221,9 @@ internal static class AdoNetExtensions
         object? parameters = null)
     {
         var result = await QueryFirstOrDefaultAsync<T>(connection, sql, parameters).ConfigureAwait(false);
-        if (result == null)
+        
+        // Handle both reference types (null check) and value types (default comparison)
+        if (EqualityComparer<T>.Default.Equals(result, default(T)))
         {
             throw new InvalidOperationException("Sequence contains no elements");
         }
